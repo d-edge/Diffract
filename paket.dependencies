@@ -1,0 +1,9 @@
+source https://api.nuget.org/v3/index.json
+storage: none
+framework: auto-detect
+
+nuget FSharp.Core
+nuget Microsoft.NET.Test.Sdk
+nuget TypeShape
+nuget xunit
+nuget xunit.runner.visualstudio
