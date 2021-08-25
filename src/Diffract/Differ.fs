@@ -7,12 +7,17 @@ open TypeShape.Core
 
 module Differ =
 
-    let inline private wrap (p : 'a -> 'a -> Diff option) = unbox<'T -> 'T -> Diff option> p
+    type DiffFunc<'T> = 'T -> 'T -> Diff option
 
-    let inline private simpleEquality< ^a, 'T when ^a : equality> : 'T -> 'T -> Diff option =
+    type FieldDiffFunc<'T> = 'T -> 'T -> FieldDiff option
+
+    let inline wrap<'a, 'T> (p : DiffFunc<'a>) =
+        unbox<DiffFunc<'T>> p
+
+    let inline simpleEquality< ^a, 'T when ^a : equality> : DiffFunc<'T> =
         wrap (fun (x1: ^a) (x2: ^a) -> if x1 = x2 then None else Some (ValueDiff (x1, x2)))
 
-    let rec diff<'T> : ('T -> 'T -> Diff option) =
+    let rec diff<'T> : DiffFunc<'T> =
         match shapeof<'T> with
         | Shape.Unit -> wrap (fun () () -> None)
         | Shape.Bool -> simpleEquality<bool, 'T>
@@ -36,6 +41,7 @@ module Differ =
         | Shape.BigInt -> simpleEquality<bigint, 'T>
         | Shape.Uri -> simpleEquality<Uri, 'T>
         | Shape.Tuple (:? ShapeTuple<'T> as t) -> diffFields t.Elements RecordDiff
+        | Shape.Enumerable e -> diffEnumerable<'T> e
         | Shape.FSharpRecord (:? ShapeFSharpRecord<'T> as r) -> diffFields r.Fields RecordDiff
         | Shape.FSharpUnion (:? ShapeFSharpUnion<'T> as u) ->
             let tagNames = u.UnionCases |> Array.map (fun c -> c.CaseInfo.Name)
@@ -49,7 +55,7 @@ module Differ =
                 else
                     Some (UnionCaseDiff (tagNames.[t1], tagNames.[t2]))
         | Shape.Enum e ->
-            { new IEnumVisitor<'T -> 'T -> Diff option> with
+            { new IEnumVisitor<DiffFunc<'T>> with
                 member _.Visit<'t, 'u when 't : enum<'u> and 't : struct and 't :> ValueType and 't : (new : unit -> 't)>() =
                     wrap (fun (x1: 't) (x2: 't) ->
                         if (x1 :> obj).Equals(x2) then // Can't do better without 't : equality? :(
@@ -63,7 +69,7 @@ module Differ =
         let fields =
             members
             |> Array.map (fun f ->
-                { new IMemberVisitor<'T, 'T -> 'T -> FieldDiff option> with
+                { new IMemberVisitor<'T, FieldDiffFunc<'T>> with
                     member _.Visit(shape) =
                         let fieldDiff = diff<'Field>
                         let name = shape.MemberInfo.Name
@@ -72,6 +78,29 @@ module Differ =
                             |> Option.map (fun diff -> { Name = name; Diff = diff }) }
                 |> f.Accept)
         fun x1 x2 ->
-            match fields |> Array.choose (fun f -> f x1 x2) with
-            | [||] -> None
+            match fields |> Seq.choose (fun f -> f x1 x2) |> List.ofSeq with
+            | [] -> None
             | diffs -> Some (wrap diffs)
+
+    and diffEnumerable<'T> (e: IShapeEnumerable) : DiffFunc<'T> =
+        { new IEnumerableVisitor<DiffFunc<'T>> with
+            member _.Visit<'Enum, 'Elt when 'Enum :> seq<'Elt>>() =
+                wrap (fun (s1: 'Enum) (s2: 'Enum) ->
+                    let s1 = Seq.cache s1
+                    let s2 = Seq.cache s2
+                    let l1 = Seq.length s1
+                    let l2 = Seq.length s2
+                    if l1 <> l2 then
+                        Some (CollectionCountDiff (l1, l2))
+                    else
+                        match
+                            (s1, s2)
+                            ||> Seq.mapi2 (fun i e1 e2 ->
+                                diff<'Elt> e1 e2
+                                |> Option.map (fun diff -> { Name = string i; Diff = diff }))
+                            |> Seq.choose id
+                            |> List.ofSeq
+                            with
+                        | [] -> None
+                        | diffs -> Some (CollectionContentDiff diffs)) }
+        |> e.Accept

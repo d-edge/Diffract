@@ -16,11 +16,10 @@ let toStreamImpl param (w: TextWriter) (d: Diff) =
         | ValueDiff (x1, x2) ->
             w.WriteLine($"%s{indent}%s{param.x1Name}%s{path} = %A{x1}")
             w.WriteLine($"%s{indent}%s{param.x2Name}%s{path} = %A{x2}")
-        | RecordDiff fields when fields.Count = 1 ->
-            let field = fields.[0]
+        | RecordDiff [field] ->
             loop indent $"%s{path}.%s{field.Name}" field.Diff
         | RecordDiff fields ->
-            w.WriteLine($"%s{indent}%s{param.neutralName}%s{path} differs by %i{fields.Count} fields:")
+            w.WriteLine($"%s{indent}%s{param.neutralName}%s{path} differs by %i{List.length fields} fields:")
             let indent = indent + param.indent
             for field in fields do
                 loop indent $"%s{path}.%s{field.Name}" field.Diff
@@ -34,6 +33,15 @@ let toStreamImpl param (w: TextWriter) (d: Diff) =
             let indent = indent + param.indent
             for field in fields do
                 loop indent $"%s{path}.%s{field.Name}" field.Diff
+        | CollectionCountDiff (c1, c2) ->
+            w.WriteLine($"%s{indent}%s{param.neutralName}%s{path} collection differs by count:")
+            w.WriteLine($"%s{indent}%s{param.indent}%s{param.x1Name}%s{path}.Count = %i{c1}")
+            w.WriteLine($"%s{indent}%s{param.indent}%s{param.x2Name}%s{path}.Count = %i{c2}")
+        | CollectionContentDiff diffs ->
+            w.WriteLine($"%s{indent}%s{param.neutralName}%s{path} collection differs by content:")
+            let indent = indent + param.indent
+            for item in diffs do
+                loop indent $"%s{path}[%s{item.Name}]" item.Diff
     loop "" "" d
 
 let toStream (param: PrintParams) (w: TextWriter) (d: Diff option) =

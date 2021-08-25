@@ -22,6 +22,21 @@ let ``Exception for non-equal values`` (x: Bar) (y: Bar) =
             Diffract.assertEqual x y)
         |> ignore
 
+[<Property>]
+let ``List diff`` (l1: int list) (l2: int list) =
+    let d = Differ.diff l1 l2
+    if l1 = l2 then
+        d = None
+    elif l1.Length <> l2.Length then
+        d = Some (CollectionCountDiff (l1.Length, l2.Length))
+    else
+        let expectedDiffs =
+            (l1, l2)
+            ||> Seq.mapi2 (fun i x1 x2 -> Differ.diff x1 x2 |> Option.map (fun d -> { Name = string i; Diff = d }))
+            |> Seq.choose id
+            |> List.ofSeq
+        d = Some (CollectionContentDiff expectedDiffs)
+
 [<Fact>]
 let ``Example output`` () =
     Assert.Equal("\
