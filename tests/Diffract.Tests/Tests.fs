@@ -1,5 +1,7 @@
 module Tests
 
+#nowarn "40"
+
 open Xunit
 open FsCheck
 open FsCheck.Xunit
@@ -73,21 +75,19 @@ Value differs by 2 fields:
 
 type CustomDiffable = { x: string }
 
-module CustomDiff =
+module rec CustomDiff =
 
-    type Custom() =
+    let differ<'T> = CustomDiffer().GetDiffer<'T>()
+
+    type CustomDiffer() =
         interface ICustomDiffer with
             member this.GetCustomDiffer<'T>(_shape) =
                 if typeof<'T> = typeof<CustomDiffable> then
-                    let diff = this.GetDiffer<string>()
-                    { new IDiffer<CustomDiffable> with
-                        member _.Diff(x1, x2) = diff.Diff(x1.x, x2.x) }
-                    |> unbox<IDiffer<'T>>
+                    Differ.wrap<'T, CustomDiffable> (fun x1 x2 ->
+                        differ<string>.Diff(x1.x, x2.x))
                     |> Some
                 else
                     None
-
-    let differ<'T> = Custom().GetDiffer<'T>()
 
 [<Fact>]
 let ``Custom differ`` () =
