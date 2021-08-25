@@ -1,11 +1,8 @@
 ﻿namespace Diffract
 
-type AssertionFailedException(diff: string) =
-    inherit System.Exception(diff)
-
 module Diffract =
 
-    let assertPrintParams : DiffPrinter.PrintParams =
+    let assertPrintParams : PrintParams =
         {
             indent = "  "
             x1Name = "Expect"

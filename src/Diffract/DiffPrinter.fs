@@ -2,14 +2,6 @@
 
 open System.IO
 
-type PrintParams =
-    {
-        indent: string
-        x1Name: string
-        x2Name: string
-        neutralName: string
-    }
-
 let toStreamImpl param (w: TextWriter) (d: Diff) =
     let rec loop (indent: string) (path: string) (d: Diff) =
         match d with
@@ -42,6 +34,8 @@ let toStreamImpl param (w: TextWriter) (d: Diff) =
             let indent = indent + param.indent
             for item in diffs do
                 loop indent $"%s{path}[%s{item.Name}]" item.Diff
+        | CustomDiff cd ->
+            cd.WriteTo(w, param, indent, path, loop)
     loop "" "" d
 
 let toStream (param: PrintParams) (w: TextWriter) (d: Diff option) =

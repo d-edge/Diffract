@@ -17,6 +17,8 @@ module Differ =
     let inline simpleEquality< ^a, 'T when ^a : equality> : DiffFunc<'T> =
         wrap (fun (x1: ^a) (x2: ^a) -> if x1 = x2 then None else Some (ValueDiff (x1, x2)))
 
+    let inline private failwith (msg: string) = raise (DiffConstructionFailedException(msg))
+
     let rec diff<'T> : DiffFunc<'T> =
         match shapeof<'T> with
         | Shape.Unit -> wrap (fun () () -> None)
@@ -58,10 +60,8 @@ module Differ =
             { new IEnumVisitor<DiffFunc<'T>> with
                 member _.Visit<'t, 'u when 't : enum<'u> and 't : struct and 't :> ValueType and 't : (new : unit -> 't)>() =
                     wrap (fun (x1: 't) (x2: 't) ->
-                        if (x1 :> obj).Equals(x2) then // Can't do better without 't : equality? :(
-                            None
-                        else
-                            Some (ValueDiff (x1, x2))) }
+                        // Can't do better without 't : equality? :(
+                        if (x1 :> obj).Equals(x2) then None else Some (ValueDiff (x1, x2))) }
             |> e.Accept
         | _ -> failwith $"Don't know how to diff values of type {typeof<'T>.AssemblyQualifiedName}"
 
