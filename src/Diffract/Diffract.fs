@@ -19,23 +19,23 @@ module Diffract =
     let assertDiff d =
         assertDiffWith assertPrintParams d
 
-    let assertEqualWith param x1 x2 =
-        Differ.diff x1 x2
+    let assertEqualWith param (differ: IDiffer<'T>) x1 x2 =
+        differ.Diff(x1, x2)
         |> assertDiffWith param
 
-    let assertEqual x1 x2 =
-        assertEqualWith assertPrintParams x1 x2
+    let assertEqual differ x1 x2 =
+        assertEqualWith assertPrintParams differ x1 x2
 
-    let toStringWith param x1 x2 =
-        Differ.diff x1 x2
+    let toStringWith param (differ: IDiffer<'T>) x1 x2 =
+        differ.Diff(x1, x2)
         |> DiffPrinter.toString param
 
-    let toString x1 x2 =
-        toStringWith assertPrintParams x1 x2
+    let toString differ x1 x2 =
+        toStringWith assertPrintParams differ x1 x2
 
-    let printWith param x1 x2 =
-        Differ.diff x1 x2
-        |> DiffPrinter.toStream param stdout
+    let printWith param (differ: IDiffer<'T>) x1 x2 =
+        differ.Diff(x1, x2)
+        |> DiffPrinter.write param stdout
 
-    let print x1 x2 =
-        printWith assertPrintParams x1 x2
+    let print differ x1 x2 =
+        printWith assertPrintParams differ x1 x2

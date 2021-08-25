@@ -9,6 +9,7 @@
     <Compile Include="Differ.fs" />
     <Compile Include="DiffPrinter.fs" />
     <Compile Include="Diffract.fs" />
+    <Compile Include="Extensions.fs" />
     <Content Include="paket.references" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />

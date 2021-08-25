@@ -2,6 +2,7 @@
 
 open System.IO
 open System.Runtime.InteropServices
+open TypeShape.Core
 
 type Diff =
     | ValueDiff of x1: obj * x2: obj
@@ -29,8 +30,17 @@ and PrintParams =
 and ICustomDiff =
     abstract WriteTo : writer: TextWriter * param: PrintParams * indent: string * path: string * recur: (string -> string -> Diff -> unit) -> unit
 
+type IDiffer<'T> =
+    abstract Diff : 'T * 'T -> Diff option
+
+type ICustomDiffer =
+    abstract GetCustomDiffer<'T> : TypeShape<'T> -> IDiffer<'T> option
+
+type [<Struct>] NoCustomDiffer =
+    interface ICustomDiffer with member _.GetCustomDiffer(_) = None
+
 type AssertionFailedException(diff: string) =
     inherit System.Exception(diff)
 
-type DiffConstructionFailedException(message: string, [<Optional>] innerException: exn) =
+type DifferConstructionFailedException(message: string, [<Optional>] innerException: exn) =
     inherit System.Exception(message, innerException)

@@ -38,12 +38,12 @@ let toStreamImpl param (w: TextWriter) (d: Diff) =
             cd.WriteTo(w, param, indent, path, loop)
     loop "" "" d
 
-let toStream (param: PrintParams) (w: TextWriter) (d: Diff option) =
+let write (param: PrintParams) (w: TextWriter) (d: Diff option) =
     match d with
     | None -> w.WriteLine($"No differences between {param.x1Name} and {param.x2Name}.")
     | Some d -> toStreamImpl param w d
 
 let toString param d =
     use w = new StringWriter()
-    toStream param w d
+    write param w d
     w.ToString()
