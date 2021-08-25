@@ -1,12 +1,19 @@
 #r "nuget: TypeShape"
-#load "../src/Diffract/Interfaces.fs"
+#load "../src/Diffract/Types.fs"
 #load "../src/Diffract/Differ.fs"
+#load "../src/Diffract/DiffPrinter.fs"
+#load "../src/Diffract/Diffract.fs"
 
 open Diffract
 
 type Foo = { x: int; y: float }
-type Bar = { a: Foo }
+type U =
+    | U1 of int
+    | U2 of x: int * y: int
+type Bar = { a: Foo; b: U }
 
-Differ.diff
-    { a = { x = 2; y = 2. } }
-    { a = { x = 2; y = 1. } }
+Diffract.print
+    { a = { x = 2; y = 1. }
+      b = U2 (2, 1) }
+    { a = { x = 1; y = 1. }
+      b = U2 (2, 3) }

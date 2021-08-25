@@ -2,6 +2,8 @@ source https://api.nuget.org/v3/index.json
 storage: none
 framework: auto-detect
 
+nuget FsCheck
+nuget FsCheck.Xunit
 nuget FSharp.Core
 nuget Microsoft.NET.Test.Sdk
 nuget TypeShape

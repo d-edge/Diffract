@@ -8,4 +8,8 @@ type Diff =
     | UnionCaseDiff of caseName1: string * caseName2: string
     | UnionFieldDiff of case: string * fields: IReadOnlyList<FieldDiff>
 
-and FieldDiff = string * Diff
+and [<Struct>] FieldDiff =
+    {
+        Name: string
+        Diff: Diff
+    }

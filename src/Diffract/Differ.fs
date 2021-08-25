@@ -1,5 +1,7 @@
 ﻿namespace Diffract
 
+#nowarn "40"
+
 open System
 open TypeShape.Core
 
@@ -48,7 +50,12 @@ module Differ =
                     Some (UnionCaseDiff (tagNames.[t1], tagNames.[t2]))
         | Shape.Enum e ->
             { new IEnumVisitor<'T -> 'T -> Diff option> with
-                member _.Visit() = fun x1 x2 -> None }
+                member _.Visit<'t, 'u when 't : enum<'u> and 't : struct and 't :> ValueType and 't : (new : unit -> 't)>() =
+                    wrap (fun (x1: 't) (x2: 't) ->
+                        if (x1 :> obj).Equals(x2) then // Can't do better without 't : equality? :(
+                            None
+                        else
+                            Some (ValueDiff (x1, x2))) }
             |> e.Accept
         | _ -> failwith $"Don't know how to diff values of type {typeof<'T>.AssemblyQualifiedName}"
 
@@ -62,7 +69,7 @@ module Differ =
                         let name = shape.MemberInfo.Name
                         fun x1 x2 ->
                             fieldDiff (shape.Get x1) (shape.Get x2)
-                            |> Option.map (fun diff -> name, diff) }
+                            |> Option.map (fun diff -> { Name = name; Diff = diff }) }
                 |> f.Accept)
         fun x1 x2 ->
             match fields |> Array.choose (fun f -> f x1 x2) with

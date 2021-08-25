@@ -5,9 +5,10 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Interfaces.fs" />
+    <Compile Include="Types.fs" />
     <Compile Include="Differ.fs" />
     <Compile Include="DiffPrinter.fs" />
+    <Compile Include="Diffract.fs" />
     <Content Include="paket.references" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
