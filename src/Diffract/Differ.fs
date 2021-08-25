@@ -63,6 +63,12 @@ module Differ =
                         // Can't do better without 't : equality? :(
                         if (x1 :> obj).Equals(x2) then None else Some (ValueDiff (x1, x2))) }
             |> e.Accept
+        | Shape.Equality e ->
+            { new IEqualityVisitor<DiffFunc<'T>> with
+                member _.Visit<'t when 't : equality>() =
+                    wrap (fun (x1: 't) (x2: 't) ->
+                        if x1 = x2 then None else Some (ValueDiff (x1, x2))) }
+            |> e.Accept
         | _ -> failwith $"Don't know how to diff values of type {typeof<'T>.AssemblyQualifiedName}"
 
     and diffFields (members: IShapeMember<'T>[]) wrap =
