@@ -75,7 +75,7 @@ Value differs by 2 fields:
 
 type CustomDiffable = { x: string }
 
-module rec CustomDiff =
+module rec MyDiffModule =
 
     let differ<'T> = CustomDiffer().GetDiffer<'T>()
 
@@ -85,6 +85,19 @@ module rec CustomDiff =
                 if typeof<'T> = typeof<CustomDiffable> then
                     Differ.wrap<'T, CustomDiffable> (fun x1 x2 ->
                         differ<string>.Diff(x1.x, x2.x))
+                    |> Some
+                else
+                    None
+
+type MyDiffType<'T>() =
+    static member val Differ = MyCustomDiffer().GetDiffer<'T>()
+
+and MyCustomDiffer() =
+        interface ICustomDiffer with
+            member this.GetCustomDiffer<'T>(_shape) =
+                if typeof<'T> = typeof<CustomDiffable> then
+                    Differ.wrap<'T, CustomDiffable> (fun x1 x2 ->
+                        MyDiffType<string>.Differ.Diff(x1.x, x2.x))
                     |> Some
                 else
                     None
@@ -100,7 +113,12 @@ Actual.x = \"b\"
 Expect = \"a\"
 Actual = \"b\"
 ",
-        CustomDiff.differ.ToString({ x = "a" }, { x = "b" }))
+        MyDiffModule.differ.ToString({ x = "a" }, { x = "b" }))
+    Assert.Equal("\
+Expect = \"a\"
+Actual = \"b\"
+",
+        MyDiffType.Differ.ToString({ x = "a" }, { x = "b" }))
 
 //type Rec = { xRec: Rec option }
 //
