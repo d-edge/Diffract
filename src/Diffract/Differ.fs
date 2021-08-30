@@ -34,7 +34,7 @@ module Differ =
         addToCache (fun _cache -> unbox<IDiffer<'Outer>> { new IDiffer<'Inner> with member _.Diff(x, y) = f x y })
 
     let inline private simpleEquality<'Outer, ^Inner when ^Inner : equality> : CachedDiffer<'Outer> =
-        wrap< ^Outer, ^Inner> (fun x1 x2 -> if x1 = x2 then None else Some (ValueDiff (x1, x2)))
+        wrap< ^Outer, ^Inner> (fun x1 x2 -> if x1 = x2 then None else Some (Diff.Value (x1, x2)))
 
     let inline private failwith (msg: string) = raise (DifferConstructionFailedException(msg))
 
@@ -68,35 +68,35 @@ module Differ =
         | Shape.TimeSpan -> simpleEquality<'T, TimeSpan> cache
         | Shape.BigInt -> simpleEquality<'T, bigint> cache
         | Shape.Uri -> simpleEquality<'T, Uri> cache
-        | Shape.Tuple (:? ShapeTuple<'T> as t) -> addToCache (diffFields custom t.Elements RecordDiff) cache
+        | Shape.Tuple (:? ShapeTuple<'T> as t) -> addToCache (diffFields custom t.Elements Diff.Record) cache
         | Shape.ReadOnlyDictionary d -> addToCache (diffReadOnlyDict custom d) cache
         | Shape.Enumerable e -> addToCache (diffEnumerable custom e) cache
-        | Shape.FSharpRecord (:? ShapeFSharpRecord<'T> as r) -> addToCache (diffFields custom r.Fields RecordDiff) cache
+        | Shape.FSharpRecord (:? ShapeFSharpRecord<'T> as r) -> addToCache (diffFields custom r.Fields Diff.Record) cache
         | Shape.FSharpUnion (:? ShapeFSharpUnion<'T> as u) ->
             let tagNames = u.UnionCases |> Array.map (fun c -> c.CaseInfo.Name)
             let tagDiffs = u.UnionCases |> Array.map (fun c ->
-                diffFields custom c.Fields (fun d -> UnionFieldDiff (c.CaseInfo.Name, d)) cache)
+                diffFields custom c.Fields (fun d -> Diff.UnionField (c.CaseInfo.Name, d)) cache)
             wrap<'T, 'T> (fun x1 x2 ->
                 let t1 = u.GetTag x1
                 let t2 = u.GetTag x2
                 if t1 = t2 then
                     tagDiffs.[t1].Diff(x1, x2)
                 else
-                    Some (UnionCaseDiff (tagNames.[t1], tagNames.[t2])))
+                    Some (Diff.UnionCase (tagNames.[t1], tagNames.[t2])))
                 cache
         | Shape.Enum e ->
             { new IEnumVisitor<IDiffer<'T>> with
                 member _.Visit<'Enum, 'Underlying when 'Enum : enum<'Underlying> and 'Enum : struct and 'Enum :> ValueType and 'Enum : (new : unit -> 'Enum)>() =
                     wrap<'T, 'Enum> (fun x1 x2 ->
                         // Can't do better without 'Enum : equality? :(
-                        if (x1 :> obj).Equals(x2) then None else Some (ValueDiff (x1, x2)))
+                        if (x1 :> obj).Equals(x2) then None else Some (Diff.Value (x1, x2)))
                         cache }
             |> e.Accept
         | Shape.Equality e ->
             { new IEqualityVisitor<IDiffer<'T>> with
                 member _.Visit<'Actual when 'Actual : equality>() =
                     wrap<'T, 'Actual> (fun x1 x2 ->
-                        if x1 = x2 then None else Some (ValueDiff (x1, x2)))
+                        if x1 = x2 then None else Some (Diff.Value (x1, x2)))
                         cache }
             |> e.Accept
         | _ -> failwith $"Don't know how to diff values of type {typeof<'T>.AssemblyQualifiedName}"
@@ -130,7 +130,7 @@ module Differ =
                         let l1 = Seq.length s1
                         let l2 = Seq.length s2
                         if l1 <> l2 then
-                            Some (CollectionCountDiff (l1, l2))
+                            Some (Diff.CollectionCount (l1, l2))
                         else
                             match
                                 (s1, s2)
@@ -141,7 +141,7 @@ module Differ =
                                 |> List.ofSeq
                                 with
                             | [] -> None
-                            | diffs -> Some (CollectionContentDiff diffs) }
+                            | diffs -> Some (Diff.CollectionContent diffs) }
                 |> unbox<IDiffer<'T>> }
         |> e.Accept
 
@@ -169,7 +169,7 @@ module Differ =
                             |> List.ofSeq
                         match keysInX1, keysInX2, common with
                         | [], [], [] -> None
-                        | _ -> Some (DictionaryDiff (keysInX1, keysInX2, common)) }
+                        | _ -> Some (Diff.Dictionary (keysInX1, keysInX2, common)) }
                 |> unbox<IDiffer<'T>> }
         |> d.Accept
 
