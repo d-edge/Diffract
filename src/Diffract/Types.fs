@@ -11,6 +11,7 @@ type Diff =
     | UnionFieldDiff of case: string * fields: FieldDiff list
     | CollectionCountDiff of count1: int * count2: int
     | CollectionContentDiff of items: FieldDiff list
+    | DictionaryDiff of keysInX1: string list * keysInX2: string list * common: FieldDiff list
     | CustomDiff of ICustomDiff
 
 and [<Struct>] FieldDiff =
@@ -33,11 +34,20 @@ and ICustomDiff =
 type IDiffer<'T> =
     abstract Diff : 'T * 'T -> Diff option
 
-type ICustomDiffer =
-    abstract GetCustomDiffer<'T> : TypeShape<'T> -> IDiffer<'T> option
+type IDiffer =
+    abstract GetDiffer<'T> : unit -> IDiffer<'T>
 
-type [<Struct>] NoCustomDiffer =
-    interface ICustomDiffer with member _.GetCustomDiffer(_) = None
+type ICustomDiffer =
+    abstract GetCustomDiffer<'T> : IDiffer * TypeShape<'T> -> IDiffer<'T> option
+
+type NoCustomDiffer() =
+    interface ICustomDiffer with
+        member _.GetCustomDiffer(_, _) = None
+
+type CombinedCustomDiffer(customDiffers: seq<ICustomDiffer>) =
+    interface ICustomDiffer with
+        member _.GetCustomDiffer(differ, shape) =
+            customDiffers |> Seq.tryPick (fun customDiffer -> customDiffer.GetCustomDiffer(differ, shape))
 
 type AssertionFailedException(diff: string) =
     inherit System.Exception(diff)

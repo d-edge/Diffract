@@ -20,6 +20,8 @@ let toStreamImpl param (w: TextWriter) (d: Diff) =
             let indent = indent + param.indent
             w.WriteLine($"%s{indent}%s{param.x1Name}%s{path} is %s{caseName1}")
             w.WriteLine($"%s{indent}%s{param.x2Name}%s{path} is %s{caseName2}")
+        | UnionFieldDiff (_case, [field]) ->
+            loop indent $"%s{path}.%s{field.Name}" field.Diff
         | UnionFieldDiff (case, fields) ->
             w.WriteLine($"%s{indent}%s{param.neutralName}%s{path} differs by union case %s{case} fields:")
             let indent = indent + param.indent
@@ -36,6 +38,14 @@ let toStreamImpl param (w: TextWriter) (d: Diff) =
                 loop indent $"%s{path}[%s{item.Name}]" item.Diff
         | CustomDiff cd ->
             cd.WriteTo(w, param, indent, path, loop)
+        | DictionaryDiff (keysInX1, keysInX2, common) ->
+            w.WriteLine($"%s{indent}%s{param.neutralName}%s{path} dictionary differs:")
+            for k in keysInX1 do
+                w.WriteLine($"%s{indent}%s{param.x2Name}%s{path}[%s{k}] is missing")
+            for k in keysInX2 do
+                w.WriteLine($"%s{indent}%s{param.x1Name}%s{path}[%s{k}] is missing")
+            for item in common do
+                loop indent $"%s{path}[%s{item.Name}]" item.Diff
     loop "" "" d
 
 let write (param: PrintParams) (w: TextWriter) (d: Diff option) =

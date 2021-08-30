@@ -81,10 +81,12 @@ module rec MyDiffModule =
 
     type CustomDiffer() =
         interface ICustomDiffer with
-            member this.GetCustomDiffer<'T>(_shape) =
+            member this.GetCustomDiffer<'T>(getDiffer, _shape) =
                 if typeof<'T> = typeof<CustomDiffable> then
-                    Differ.wrap<'T, CustomDiffable> (fun x1 x2 ->
-                        differ<string>.Diff(x1.x, x2.x))
+                    let differ = getDiffer.GetDiffer<string>()
+                    { new IDiffer<CustomDiffable> with
+                        member _.Diff(x1, x2) = differ.Diff(x1.x, x2.x) }
+                    |> unbox<IDiffer<'T>>
                     |> Some
                 else
                     None
@@ -93,14 +95,16 @@ type MyDiffType<'T>() =
     static member val Differ = MyCustomDiffer().GetDiffer<'T>()
 
 and MyCustomDiffer() =
-        interface ICustomDiffer with
-            member this.GetCustomDiffer<'T>(_shape) =
-                if typeof<'T> = typeof<CustomDiffable> then
-                    Differ.wrap<'T, CustomDiffable> (fun x1 x2 ->
-                        MyDiffType<string>.Differ.Diff(x1.x, x2.x))
-                    |> Some
-                else
-                    None
+    interface ICustomDiffer with
+        member this.GetCustomDiffer<'T>(getDiffer, _shape) =
+            if typeof<'T> = typeof<CustomDiffable> then
+                let differ = getDiffer.GetDiffer<string>()
+                { new IDiffer<CustomDiffable> with
+                    member _.Diff(x1, x2) = differ.Diff(x1.x, x2.x) }
+                |> unbox<IDiffer<'T>>
+                |> Some
+            else
+                None
 
 [<Fact>]
 let ``Custom differ`` () =
@@ -120,13 +124,15 @@ Actual = \"b\"
 ",
         MyDiffType.Differ.ToString({ x = "a" }, { x = "b" }))
 
-//type Rec = { xRec: Rec option }
-//
-//[<Fact>]
-//let ``Recursive type`` () =
-//    Assert.Equal("\
-//Value.xRec.Value.xRec differs by union case:
-//  Expect.xRec.Value.xRec is None
-//  Actual.xRec.Value.xRec is Some
-//",
-//        Differ.simple.ToString({ xRec = Some { xRec = None } }, { xRec = Some { xRec = Some { xRec = None } } }))
+type Rec = { xRec: Rec option }
+
+[<Fact>]
+let ``Recursive type`` () =
+    let x1 = { xRec = Some { xRec = None } }
+    let x2 = { xRec = Some { xRec = Some { xRec = None } } }
+    Assert.Equal("\
+Value.xRec.Value.xRec differs by union case:
+  Expect.xRec.Value.xRec is None
+  Actual.xRec.Value.xRec is Some
+",
+        Differ.simple.ToString(x1, x2))

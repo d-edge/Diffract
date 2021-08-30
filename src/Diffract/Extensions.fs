@@ -1,5 +1,6 @@
 ﻿namespace Diffract
 
+open System.Collections.Generic
 open System.IO
 open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
@@ -32,4 +33,4 @@ type Extensions private () =
 
     [<Extension>]
     static member GetDiffer<'T>(custom: ICustomDiffer) =
-        Differ.diffWith<'T> custom
+        Differ.diffWith<'T> custom (Dictionary())
