@@ -41,14 +41,7 @@ let ``List diff`` (l1: int list) (l2: int list) =
 
 [<Fact>]
 let ``Example output`` () =
-    Assert.Equal("\
-Value differs by 2 fields:
-  Expect.a.y = true
-  Actual.a.y = false
-  Value.b differs by union case:
-    Expect.b is U1
-    Actual.b is U2
-",
+    Assert.Equal("Value differs by 2 fields:\n  Expect.a.y = true\n  Actual.a.y = false\n  Value.b differs by union case:\n    Expect.b is U1\n    Actual.b is U2\n",
         Differ.simple.ToString(
             { a = { x = 1; y = true }
               b = U1 1 },
@@ -63,14 +56,7 @@ let ``Example error message`` () =
               b = U1 1 },
             { a = { x = 1; y = false }
               b = U2 (1, 2) }))
-    Assert.Equal("\
-Value differs by 2 fields:
-  Expect.a.y = true
-  Actual.a.y = false
-  Value.b differs by union case:
-    Expect.b is U1
-    Actual.b is U2
-",
+    Assert.Equal("Value differs by 2 fields:\n  Expect.a.y = true\n  Actual.a.y = false\n  Value.b differs by union case:\n    Expect.b is U1\n    Actual.b is U2\n",
         ex.Message)
 
 type CustomDiffable = { x: string }
@@ -108,20 +94,11 @@ and MyCustomDiffer() =
 
 [<Fact>]
 let ``Custom differ`` () =
-    Assert.Equal("\
-Expect.x = \"a\"
-Actual.x = \"b\"
-",
+    Assert.Equal("Expect.x = \"a\"\nActual.x = \"b\"\n",
         Differ.simple.ToString({ x = "a" }, { x = "b" }))
-    Assert.Equal("\
-Expect = \"a\"
-Actual = \"b\"
-",
+    Assert.Equal("Expect = \"a\"\nActual = \"b\"\n",
         MyDiffModule.differ.ToString({ x = "a" }, { x = "b" }))
-    Assert.Equal("\
-Expect = \"a\"
-Actual = \"b\"
-",
+    Assert.Equal("Expect = \"a\"\nActual = \"b\"\n",
         MyDiffType.Differ.ToString({ x = "a" }, { x = "b" }))
 
 type Rec = { xRec: Rec option }
@@ -130,9 +107,5 @@ type Rec = { xRec: Rec option }
 let ``Recursive type`` () =
     let x1 = { xRec = Some { xRec = None } }
     let x2 = { xRec = Some { xRec = Some { xRec = None } } }
-    Assert.Equal("\
-Value.xRec.Value.xRec differs by union case:
-  Expect.xRec.Value.xRec is None
-  Actual.xRec.Value.xRec is Some
-",
+    Assert.Equal("Value.xRec.Value.xRec differs by union case:\n  Expect.xRec.Value.xRec is None\n  Actual.xRec.Value.xRec is Some\n",
         Differ.simple.ToString(x1, x2))

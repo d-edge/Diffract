@@ -54,6 +54,6 @@ let write (param: PrintParams) (w: TextWriter) (d: Diff option) =
     | Some d -> toStreamImpl param w d
 
 let toString param d =
-    use w = new StringWriter()
+    use w = new StringWriter(NewLine = "\n")
     write param w d
     w.ToString()
