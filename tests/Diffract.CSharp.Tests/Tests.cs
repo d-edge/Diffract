@@ -11,7 +11,7 @@ namespace Diffract.CSharp.Tests
         {
             var expected = new MyPoco { Item = new MyInnerPoco(1, "a", 1) };
             var actual = new MyPoco { Item = new MyInnerPoco(2, "a", 2) };
-            Assert.Equal("Expect.Item.X = 1\nActual.Item.X = 2\n",
+            Assert.Equal("Item.X Expect = 1\n       Actual = 2\n",
                 Diffract.ToString(expected, actual));
         }
 
@@ -20,7 +20,7 @@ namespace Diffract.CSharp.Tests
         {
             var expected = new MyRecord(1, "a");
             var actual = new MyRecord(2, "a");
-            Assert.Equal("Expect.X = 1\nActual.X = 2\n",
+            Assert.Equal("X Expect = 1\n  Actual = 2\n",
                 Diffract.ToString(expected, actual));
         }
 

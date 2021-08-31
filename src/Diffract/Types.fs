@@ -32,13 +32,13 @@ and ICustomDiff =
     abstract WriteTo : writer: TextWriter * param: PrintParams * indent: string * path: string * recur: (string -> string -> Diff -> unit) -> unit
 
 type IDiffer<'T> =
-    abstract Diff : 'T * 'T -> Diff option
+    abstract Diff : x1: 'T * x2: 'T -> Diff option
 
 type IDifferFactory =
     abstract GetDiffer<'T> : unit -> IDiffer<'T>
 
 type ICustomDiffer =
-    abstract GetCustomDiffer<'T> : IDifferFactory * TypeShape<'T> -> IDiffer<'T> option
+    abstract GetCustomDiffer<'T> : differFactory: IDifferFactory * shape: TypeShape<'T> -> IDiffer<'T> option
 
 type NoCustomDiffer() =
     interface ICustomDiffer with
