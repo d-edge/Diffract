@@ -1,0 +1,5 @@
+﻿type project
+licenseExpression MIT
+authors Loïc Denuzière
+description
+    Display a readable diff between two objects
