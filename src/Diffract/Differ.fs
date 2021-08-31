@@ -134,19 +134,16 @@ module Differ =
                         let s2 = Seq.cache s2
                         let l1 = Seq.length s1
                         let l2 = Seq.length s2
-                        if l1 <> l2 then
-                            Some (Diff.CollectionCount (l1, l2))
-                        else
-                            match
-                                (s1, s2)
-                                ||> Seq.mapi2 (fun i e1 e2 ->
-                                    diffItem.Diff(e1, e2)
-                                    |> Option.map (fun diff -> { Name = string i; Diff = diff }))
-                                |> Seq.choose id
-                                |> List.ofSeq
-                                with
-                            | [] -> None
-                            | diffs -> Some (Diff.CollectionContent diffs) }
+                        match
+                            (s1, s2)
+                            ||> Seq.mapi2 (fun i e1 e2 ->
+                                diffItem.Diff(e1, e2)
+                                |> Option.map (fun diff -> { Name = string i; Diff = diff }))
+                            |> Seq.choose id
+                            |> List.ofSeq
+                            with
+                        | [] when l1 = l2 -> None
+                        | diffs -> Some (Diff.Collection (l1, l2, diffs)) }
                 |> unbox<IDiffer<'T>> }
         |> e.Accept
 

@@ -33,14 +33,13 @@ let toStreamImpl param (w: TextWriter) (d: Diff) =
             let indent = indent + param.indent
             for field in fields do
                 loop indent (addPathField path field.Name) field.Diff
-        | Diff.CollectionCount (c1, c2) ->
-            w.WriteLine($"%s{indent}%s{displayPath path} collection differs by count:")
+        | Diff.Collection (c1, c2, diffs) ->
+            w.WriteLine($"%s{indent}%s{displayPath path} collection differs:")
             let indent = indent + param.indent
-            w.WriteLine($"%s{indent}%s{param.x1Name} = %i{c1}")
-            w.WriteLine($"%s{indent}%s{param.x2Name} = %i{c2}")
-        | Diff.CollectionContent diffs ->
-            w.WriteLine($"%s{indent}%s{displayPath path} collection differs by content:")
-            let indent = indent + param.indent
+            if c1 <> c2 then
+                let countPath = addPathField path "Count"
+                w.WriteLine($"%s{indent}%s{countPath} %s{param.x1Name} = %i{c1}")
+                w.WriteLine($"%s{indent}%s{indentLike countPath} %s{param.x2Name} = %i{c2}")
             for item in diffs do
                 loop indent (addPathIndex path item.Name) item.Diff
         | Diff.Custom cd ->

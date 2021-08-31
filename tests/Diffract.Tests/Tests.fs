@@ -29,15 +29,13 @@ let ``List diff`` (l1: int list) (l2: int list) =
     let d = Diffract.Diff(l1, l2)
     if l1 = l2 then
         d = None
-    elif l1.Length <> l2.Length then
-        d = Some (Diff.CollectionCount (l1.Length, l2.Length))
     else
         let expectedDiffs =
             (l1, l2)
             ||> Seq.mapi2 (fun i x1 x2 -> Diffract.Diff(x1, x2) |> Option.map (fun d -> { Name = string i; Diff = d }))
             |> Seq.choose id
             |> List.ofSeq
-        d = Some (Diff.CollectionContent expectedDiffs)
+        d = Some (Diff.Collection (l1.Length, l2.Length, expectedDiffs))
 
 [<Fact>]
 let ``Example output`` () =
@@ -58,6 +56,13 @@ let ``Example error message`` () =
               b = U2 (1, 2) }))
     Assert.Equal("Value differs by 2 fields:\n  a.y Expect = true\n      Actual = false\n  b differs by union case:\n    Expect is U1\n    Actual is U2\n",
         ex.Message)
+
+[<Fact>]
+let ``Example collection`` () =
+    Assert.Equal("x collection differs:\n  x.Count Expect = 2\n          Actual = 3\n  x[1] Expect = 3\n       Actual = 2\n",
+        Diffract.ToString(
+            {| x = [1; 3] |},
+            {| x = [1; 2; 3] |}))
 
 type CustomDiffable = { x: string }
 

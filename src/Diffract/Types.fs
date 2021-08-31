@@ -9,8 +9,7 @@ type Diff =
     | Record of fields: FieldDiff list
     | UnionCase of caseName1: string * caseName2: string
     | UnionField of case: string * fields: FieldDiff list
-    | CollectionCount of count1: int * count2: int
-    | CollectionContent of items: FieldDiff list
+    | Collection of count1: int * count2: int * items: FieldDiff list
     | Dictionary of keysInX1: string list * keysInX2: string list * common: FieldDiff list
     | Custom of ICustomDiff
 
