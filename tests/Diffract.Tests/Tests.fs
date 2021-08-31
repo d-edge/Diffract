@@ -113,7 +113,7 @@ let ``Recursive type`` () =
         Diffract.ToString(x1, x2))
 
 [<Fact>]
-let ``Anonymous records`` () =
+let ``Anonymous record`` () =
     Assert.Null(Diffract.Diff({| x = 1; y = "2" |}, {| x = 1; y = "2" |}))
     Assert.Equal("Expect.x = 1\nActual.x = 2\n",
         Diffract.ToString({| x = 1; y = "2" |}, {| x = 2; y = "2" |}))

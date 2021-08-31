@@ -1,10 +1,9 @@
 ﻿namespace Diffract
 
-open System.Collections.Generic
-
 #nowarn "40"
 
 open System
+open System.Collections.Generic
 open TypeShape.Core
 open Diffract.ReadOnlyDictionaryShape
 
@@ -92,6 +91,9 @@ module Differ =
                         if (x1 :> obj).Equals(x2) then None else Some (Diff.Value (x1, x2)))
                         cache }
             |> e.Accept
+        | Shape.Poco (:? ShapePoco<'T> as p) ->
+            let members = p.Properties |> Array.filter (fun p -> p.IsPublic)
+            addToCache (diffReadOnlyFields<'T> custom members Diff.Record) cache
         | Shape.Equality e ->
             { new IEqualityVisitor<IDiffer<'T>> with
                 member _.Visit<'Actual when 'Actual : equality>() =
@@ -101,11 +103,11 @@ module Differ =
             |> e.Accept
         | _ -> failwith $"Don't know how to diff values of type {typeof<'T>.AssemblyQualifiedName}"
 
-    and diffFields<'T> (custom: ICustomDiffer) (members: IShapeMember<'T>[]) (wrapFieldDiffs: FieldDiff list -> Diff) (cache: Cache) : IDiffer<'T> =
+    and diffReadOnlyFields<'T> (custom: ICustomDiffer) (members: IShapeReadOnlyMember<'T>[]) (wrapFieldDiffs: FieldDiff list -> Diff) (cache: Cache) : IDiffer<'T> =
         let fields =
             members
             |> Array.map (fun f ->
-                { new IMemberVisitor<'T, 'T -> 'T -> FieldDiff option> with
+                { new IReadOnlyMemberVisitor<'T, 'T -> 'T -> FieldDiff option> with
                     member _.Visit<'Field>(shape) =
                         let fieldDiff = diffWith<'Field> custom cache
                         let name = shape.MemberInfo.Name
@@ -118,6 +120,9 @@ module Differ =
                 match fields |> Seq.choose (fun f -> f x1 x2) |> List.ofSeq with
                 | [] -> None
                 | diffs -> Some (wrapFieldDiffs diffs) }
+
+    and diffFields<'T> (custom: ICustomDiffer) (members: IShapeMember<'T>[]) (wrapFieldDiffs: FieldDiff list -> Diff) (cache: Cache) : IDiffer<'T> =
+        diffReadOnlyFields custom (unbox<IShapeReadOnlyMember<'T>[]> members) wrapFieldDiffs cache
 
     and diffEnumerable<'T> (custom: ICustomDiffer) (e: IShapeEnumerable) (cache: Cache) : IDiffer<'T> =
         { new IEnumerableVisitor<IDiffer<'T>> with

@@ -13,11 +13,13 @@ EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Diffract", "src\Diffract\Diffract.fsproj", "{FAFE184C-6C5E-47A1-9A93-7B8F48082F49}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{67F4C459-70D9-44D5-9E3F-883FFBDF6018}"
-ProjectSection(SolutionItems) = preProject
-	tests\Test.fsx = tests\Test.fsx
-EndProjectSection
+	ProjectSection(SolutionItems) = preProject
+		tests\Test.fsx = tests\Test.fsx
+	EndProjectSection
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Diffract.Tests", "tests\Diffract.Tests\Diffract.Tests.fsproj", "{45228A71-E9C9-49ED-8094-8F3354924C10}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Diffract.CSharp.Tests", "tests\Diffract.CSharp.Tests\Diffract.CSharp.Tests.csproj", "{6EF4AF3B-8257-4970-8BF8-AC5C21CFB658}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -36,9 +38,14 @@ Global
 		{45228A71-E9C9-49ED-8094-8F3354924C10}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{45228A71-E9C9-49ED-8094-8F3354924C10}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{45228A71-E9C9-49ED-8094-8F3354924C10}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6EF4AF3B-8257-4970-8BF8-AC5C21CFB658}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6EF4AF3B-8257-4970-8BF8-AC5C21CFB658}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6EF4AF3B-8257-4970-8BF8-AC5C21CFB658}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6EF4AF3B-8257-4970-8BF8-AC5C21CFB658}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{FAFE184C-6C5E-47A1-9A93-7B8F48082F49} = {84AC3DD1-BF17-49DF-9582-07460FC75D5A}
 		{45228A71-E9C9-49ED-8094-8F3354924C10} = {67F4C459-70D9-44D5-9E3F-883FFBDF6018}
+		{6EF4AF3B-8257-4970-8BF8-AC5C21CFB658} = {67F4C459-70D9-44D5-9E3F-883FFBDF6018}
 	EndGlobalSection
 EndGlobal

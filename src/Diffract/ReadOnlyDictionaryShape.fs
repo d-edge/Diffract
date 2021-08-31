@@ -10,7 +10,7 @@ type IReadOnlyDictionaryVisitor<'R> =
 type IShapeReadOnlyDictionary =
     abstract Key : TypeShape
     abstract Value : TypeShape
-    abstract Accept : IReadOnlyDictionaryVisitor<'R> -> 'R
+    abstract Accept : visitor: IReadOnlyDictionaryVisitor<'R> -> 'R
 
 type private ShapeReadOnlyDictionary<'Dict, 'K, 'V when 'K : equality and 'Dict :> IReadOnlyDictionary<'K, 'V>>() =
     interface IShapeReadOnlyDictionary with
