@@ -1,8 +1,14 @@
 ﻿namespace Diffract
 
-module Diffract =
+open System
+open System.Collections.Generic
+open System.IO
+open System.Runtime.InteropServices
 
-    let assertPrintParams : PrintParams =
+[<AbstractClass; Sealed>]
+type Diffract private () =
+
+    static let assertPrintParams : PrintParams =
         {
             indent = "  "
             x1Name = "Expect"
@@ -10,32 +16,48 @@ module Diffract =
             neutralName = "Value"
         }
 
-    let assertDiffWith param d =
-        if Option.isSome d then
-            DiffPrinter.toString param d
+    static let defaultPrintParams p =
+        if obj.ReferenceEquals(p, null) then assertPrintParams else p
+
+    static let defaultDiffer d =
+        if obj.ReferenceEquals(d, null) then Differ.simple else d
+
+    static member AssertPrintParams = assertPrintParams
+
+    static member GetDiffer<'T>([<ParamArray>] customDiffers: ICustomDiffer[]) =
+        match customDiffers.Length with
+        | 0 -> Differ.simple<'T>
+        | 1 -> Differ.diffWith<'T> customDiffers.[0] (Dictionary())
+        | _ -> Differ.diffWith<'T> (CombinedCustomDiffer(customDiffers)) (Dictionary())
+
+    static member Diff<'T>(expected: 'T, actual: 'T, [<Optional>] differ: IDiffer<'T>) =
+        let differ = defaultDiffer differ
+        differ.Diff(expected, actual)
+
+    static member Assert(diff: Diff option, [<Optional>] param: PrintParams) =
+        let param = defaultPrintParams param
+        if Option.isSome diff then
+            DiffPrinter.toString param diff
             |> AssertionFailedException
             |> raise
 
-    let assertDiff d =
-        assertDiffWith assertPrintParams d
+    static member Assert<'T>(expected: 'T, actual: 'T, [<Optional>] differ: IDiffer<'T>, [<Optional>] param: PrintParams) =
+        let diff = Diffract.Diff(expected, actual, differ)
+        Diffract.Assert(diff, param)
 
-    let assertEqualWith param (differ: IDiffer<'T>) x1 x2 =
-        differ.Diff(x1, x2)
-        |> assertDiffWith param
+    static member ToString(diff: Diff option, [<Optional>] param: PrintParams) =
+        let param = defaultPrintParams param
+        DiffPrinter.toString param diff
 
-    let assertEqual differ x1 x2 =
-        assertEqualWith assertPrintParams differ x1 x2
+    static member ToString<'T>(expected: 'T, actual: 'T, [<Optional>] differ: IDiffer<'T>, [<Optional>] param: PrintParams) =
+        let diff = Diffract.Diff(expected, actual, differ)
+        Diffract.ToString(diff, param)
 
-    let toStringWith param (differ: IDiffer<'T>) x1 x2 =
-        differ.Diff(x1, x2)
-        |> DiffPrinter.toString param
+    static member Write(diff: Diff option, [<Optional>] writer: TextWriter, [<Optional>] param: PrintParams) =
+        let writer = if isNull writer then stdout else writer
+        let param = defaultPrintParams param
+        DiffPrinter.write param writer diff
 
-    let toString differ x1 x2 =
-        toStringWith assertPrintParams differ x1 x2
-
-    let printWith param (differ: IDiffer<'T>) x1 x2 =
-        differ.Diff(x1, x2)
-        |> DiffPrinter.write param stdout
-
-    let print differ x1 x2 =
-        printWith assertPrintParams differ x1 x2
+    static member Write<'T>(expected: 'T, actual: 'T, [<Optional>] writer: TextWriter, [<Optional>] differ: IDiffer<'T>, [<Optional>] param: PrintParams) =
+        let diff = Diffract.Diff(expected, actual, differ)
+        Diffract.Write(diff, writer, param)

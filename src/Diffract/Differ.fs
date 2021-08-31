@@ -10,7 +10,7 @@ open Diffract.ReadOnlyDictionaryShape
 
 module Differ =
 
-    type private Cache = Dictionary<Type, IDiffer>
+    type private Cache = Dictionary<Type, IDifferFactory>
     type private CachedDiffer<'T> = Cache -> IDiffer<'T>
 
     let private addToCache (differ: CachedDiffer<'T>) : CachedDiffer<'T> =
@@ -19,7 +19,7 @@ module Differ =
             match cache.TryGetValue(ty) with
             | false, _ ->
                 let r = ref Unchecked.defaultof<IDiffer<'T>>
-                cache.Add(ty, { new IDiffer with
+                cache.Add(ty, { new IDifferFactory with
                     member _.GetDiffer<'U>() =
                         { new IDiffer<'U> with
                             member _.Diff(x1, x2) =
@@ -39,7 +39,7 @@ module Differ =
     let inline private failwith (msg: string) = raise (DifferConstructionFailedException(msg))
 
     let rec diffWith<'T> (custom: ICustomDiffer) (cache: Cache) : IDiffer<'T> =
-        let getCached = { new IDiffer with
+        let getCached = { new IDifferFactory with
             member _.GetDiffer<'U>() =
                 match cache.TryGetValue(typeof<'U>) with
                 | true, d -> d.GetDiffer<'U>()

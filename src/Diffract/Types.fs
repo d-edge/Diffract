@@ -34,11 +34,11 @@ and ICustomDiff =
 type IDiffer<'T> =
     abstract Diff : 'T * 'T -> Diff option
 
-type IDiffer =
+type IDifferFactory =
     abstract GetDiffer<'T> : unit -> IDiffer<'T>
 
 type ICustomDiffer =
-    abstract GetCustomDiffer<'T> : IDiffer * TypeShape<'T> -> IDiffer<'T> option
+    abstract GetCustomDiffer<'T> : IDifferFactory * TypeShape<'T> -> IDiffer<'T> option
 
 type NoCustomDiffer() =
     interface ICustomDiffer with
