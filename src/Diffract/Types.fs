@@ -1,16 +1,17 @@
 ﻿namespace Diffract
 
+open System.Collections.Generic
 open System.IO
 open System.Runtime.InteropServices
 open TypeShape.Core
 
 type Diff =
     | Value of x1: obj * x2: obj
-    | Record of fields: FieldDiff list
+    | Record of fields: IReadOnlyList<FieldDiff>
     | UnionCase of caseName1: string * caseName2: string
-    | UnionField of case: string * fields: FieldDiff list
-    | Collection of count1: int * count2: int * items: FieldDiff list
-    | Dictionary of keysInX1: string list * keysInX2: string list * common: FieldDiff list
+    | UnionField of case: string * fields: IReadOnlyList<FieldDiff>
+    | Collection of count1: int * count2: int * items: IReadOnlyList<FieldDiff>
+    | Dictionary of keysInX1: IReadOnlyList<string> * keysInX2: IReadOnlyList<string> * common: IReadOnlyList<FieldDiff>
     | Custom of ICustomDiff
 
 and [<Struct>] FieldDiff =

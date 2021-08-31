@@ -14,10 +14,10 @@ let toStreamImpl param (w: TextWriter) (d: Diff) =
             let dpath = if path = "" then "" else path + " "
             w.WriteLine($"%s{indent}%s{dpath}%s{param.x1Name} = %A{x1}")
             w.WriteLine($"%s{indent}%s{indentLike dpath}%s{param.x2Name} = %A{x2}")
-        | Diff.Record [field] ->
-            loop indent (addPathField path field.Name) field.Diff
+        | Diff.Record fields when fields.Count = 1 ->
+            loop indent (addPathField path fields.[0].Name) fields.[0].Diff
         | Diff.Record fields ->
-            w.WriteLine($"%s{indent}%s{displayPath path} differs by %i{List.length fields} fields:")
+            w.WriteLine($"%s{indent}%s{displayPath path} differs by %i{fields.Count} fields:")
             let indent = indent + param.indent
             for field in fields do
                 loop indent (addPathField path field.Name) field.Diff
@@ -26,8 +26,8 @@ let toStreamImpl param (w: TextWriter) (d: Diff) =
             let indent = indent + param.indent
             w.WriteLine($"%s{indent}%s{param.x1Name} is %s{caseName1}")
             w.WriteLine($"%s{indent}%s{param.x2Name} is %s{caseName2}")
-        | Diff.UnionField (_case, [field]) ->
-            loop indent (addPathField path field.Name) field.Diff
+        | Diff.UnionField (_case, fields) when fields.Count = 1 ->
+            loop indent (addPathField path fields.[0].Name) fields.[0].Diff
         | Diff.UnionField (case, fields) ->
             w.WriteLine($"%s{indent}%s{displayPath path} differs by union case %s{case} fields:")
             let indent = indent + param.indent

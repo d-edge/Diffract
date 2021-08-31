@@ -103,7 +103,7 @@ module Differ =
             |> e.Accept
         | _ -> failwith $"Don't know how to diff values of type {typeof<'T>.AssemblyQualifiedName}"
 
-    and diffReadOnlyFields<'T> (custom: ICustomDiffer) (members: IShapeReadOnlyMember<'T>[]) (wrapFieldDiffs: FieldDiff list -> Diff) (cache: Cache) : IDiffer<'T> =
+    and diffReadOnlyFields<'T> (custom: ICustomDiffer) (members: IShapeReadOnlyMember<'T>[]) (wrapFieldDiffs: IReadOnlyList<FieldDiff> -> Diff) (cache: Cache) : IDiffer<'T> =
         let fields =
             members
             |> Array.map (fun f ->
@@ -121,7 +121,7 @@ module Differ =
                 | [] -> None
                 | diffs -> Some (wrapFieldDiffs diffs) }
 
-    and diffFields<'T> (custom: ICustomDiffer) (members: IShapeMember<'T>[]) (wrapFieldDiffs: FieldDiff list -> Diff) (cache: Cache) : IDiffer<'T> =
+    and diffFields<'T> (custom: ICustomDiffer) (members: IShapeMember<'T>[]) (wrapFieldDiffs: IReadOnlyList<FieldDiff> -> Diff) (cache: Cache) : IDiffer<'T> =
         diffReadOnlyFields custom (unbox<IShapeReadOnlyMember<'T>[]> members) wrapFieldDiffs cache
 
     and diffEnumerable<'T> (custom: ICustomDiffer) (e: IShapeEnumerable) (cache: Cache) : IDiffer<'T> =
