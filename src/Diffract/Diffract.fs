@@ -25,7 +25,7 @@ type Diffract private () =
     /// The default print parameters for assertions.
     static member AssertPrintParams = assertPrintParams
 
-    /// <summary>Get a diffing engine for a specific type.</summary>
+    /// <summary>Get a differ for a specific type.</summary>
     /// <param name="customDiffers">Custom differs to handle specific types.</param>
     static member GetDiffer<'T>([<ParamArray>] customDiffers: ICustomDiffer[]) =
         match customDiffers with
@@ -36,7 +36,7 @@ type Diffract private () =
     /// <summary>Compute the diff between two values.</summary>
     /// <param name="expected">The first value to diff.</param>
     /// <param name="actual">The second value to dif.</param>
-    /// <param name="differ">The diffing engine to use. If null, use <see cref="GetDiffer">GetDiffer&lt;T&gt;()</see>.</param>
+    /// <param name="differ">The differ to use. If null, use <see cref="GetDiffer">GetDiffer&lt;T&gt;()</see>.</param>
     /// <returns>The diff between the two objects, or None if they are found equal.</returns>
     static member Diff<'T>(expected: 'T, actual: 'T, [<Optional>] differ: IDiffer<'T>) =
         let differ = defaultDiffer differ
@@ -55,7 +55,7 @@ type Diffract private () =
     /// <summary>Throw <see cref="AssertionFailedException"/> if a diff is non-empty.</summary>
     /// <param name="expected">The first value to diff.</param>
     /// <param name="actual">The second value to dif.</param>
-    /// <param name="differ">The diffing engine to use. If null, use <see cref="GetDiffer">GetDiffer&lt;T&gt;()</see>.</param>
+    /// <param name="differ">The differ to use. If null, use <see cref="GetDiffer">GetDiffer&lt;T&gt;()</see>.</param>
     /// <param name="param">The printing parameters used to generate the exception message.</param>
     static member Assert<'T>(expected: 'T, actual: 'T, [<Optional>] differ: IDiffer<'T>, [<Optional>] param: PrintParams) =
         let diff = Diffract.Diff(expected, actual, differ)
@@ -71,7 +71,7 @@ type Diffract private () =
     /// <summary>Print a diff to a string.</summary>
     /// <param name="expected">The first value to diff.</param>
     /// <param name="actual">The second value to dif.</param>
-    /// <param name="differ">The diffing engine to use. If null, use <see cref="GetDiffer">GetDiffer&lt;T&gt;()</see>.</param>
+    /// <param name="differ">The differ to use. If null, use <see cref="GetDiffer">GetDiffer&lt;T&gt;()</see>.</param>
     /// <param name="param">The printing parameters.</param>
     static member ToString<'T>(expected: 'T, actual: 'T, [<Optional>] differ: IDiffer<'T>, [<Optional>] param: PrintParams) =
         let diff = Diffract.Diff(expected, actual, differ)
@@ -89,7 +89,7 @@ type Diffract private () =
     /// <summary>Print a diff to a TextWriter.</summary>
     /// <param name="expected">The first value to diff.</param>
     /// <param name="actual">The second value to dif.</param>
-    /// <param name="differ">The diffing engine to use. If null, use <see cref="GetDiffer">GetDiffer&lt;T&gt;()</see>.</param>
+    /// <param name="differ">The differ to use. If null, use <see cref="GetDiffer">GetDiffer&lt;T&gt;()</see>.</param>
     /// <param name="writer">The writer to print to. If null, use standard output.</param>
     /// <param name="param">The printing parameters.</param>
     static member Write<'T>(expected: 'T, actual: 'T, [<Optional>] writer: TextWriter, [<Optional>] differ: IDiffer<'T>, [<Optional>] param: PrintParams) =

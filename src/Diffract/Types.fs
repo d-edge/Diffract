@@ -55,22 +55,22 @@ and ICustomDiff =
     ///     Takes indent, path and the inner diff to print as arguments.</param>
     abstract WriteTo : writer: TextWriter * param: PrintParams * indent: string * path: string * recur: (string -> string -> Diff -> unit) -> unit
 
-/// A diffing engine for a specific type.
+/// A differ for a specific type.
 type IDiffer<'T> =
     /// Diff two values.
     abstract Diff : x1: 'T * x2: 'T -> Diff option
 
-/// Generates a diffing engine for any given type.
+/// Generates a differ for any given type.
 type IDifferFactory =
-    /// Get the diffing engine for a given type.
+    /// Get the differ for a given type.
     abstract GetDiffer<'T> : unit -> IDiffer<'T>
 
-/// Generates a diffing engine for a specific type or set of types.
+/// Generates a differ for a specific type or set of types.
 type ICustomDiffer =
-    /// <summary>Get the diffing engine for this type.</summary>
-    /// <param name="differFactory">The factory to use to get diffing engines for nested values.</param>
+    /// <summary>Get the differ for this type.</summary>
+    /// <param name="differFactory">The factory to use to get differs for nested values.</param>
     /// <param name="shape">The TypeShape for the current type.</param>
-    /// <returns>A diffing engine for this type, or None if this custom differ doesn't handle this type.</returns>
+    /// <returns>A differ for this type, or None if this custom differ doesn't handle this type.</returns>
     abstract GetCustomDiffer<'T> : differFactory: IDifferFactory * shape: TypeShape<'T> -> IDiffer<'T> option
 
 type NoCustomDiffer() =
@@ -82,10 +82,10 @@ type CombinedCustomDiffer(customDiffers: seq<ICustomDiffer>) =
         member _.GetCustomDiffer(differ, shape) =
             customDiffers |> Seq.tryPick (fun customDiffer -> customDiffer.GetCustomDiffer(differ, shape))
 
-/// Thrown when the diffing engine found differences between two objects.
+/// Thrown when the differ found differences between two objects.
 type AssertionFailedException(diff: string) =
     inherit System.Exception(diff)
 
-/// Thrown when the differ factory couldn't build a diffing engine for a type.
+/// Thrown when the differ factory couldn't build a differ for a type.
 type DifferConstructionFailedException(message: string, [<Optional>] innerException: exn) =
     inherit System.Exception(message, innerException)

@@ -9,7 +9,7 @@ open System.Runtime.InteropServices
 type Extensions private () =
 
     /// <summary>Throw <see cref="AssertionFailedException"/> if a diff is non-empty.</summary>
-    /// <param name="differ">The diffing engine to use.</param>
+    /// <param name="differ">The differ to use.</param>
     /// <param name="expected">The first value to diff.</param>
     /// <param name="actual">The second value to dif.</param>
     /// <param name="param">The printing parameters used to generate the exception message.</param>
@@ -18,7 +18,7 @@ type Extensions private () =
         Diffract.Assert(expected, actual, differ, param)
 
     /// <summary>Print a diff to a string.</summary>
-    /// <param name="differ">The diffing engine to use.</param>
+    /// <param name="differ">The differ to use.</param>
     /// <param name="expected">The first value to diff.</param>
     /// <param name="actual">The second value to dif.</param>
     /// <param name="param">The printing parameters.</param>
@@ -27,7 +27,7 @@ type Extensions private () =
         Diffract.ToString(expected, actual, differ, param)
 
     /// <summary>Print a diff to a TextWriter.</summary>
-    /// <param name="differ">The diffing engine to use.</param>
+    /// <param name="differ">The differ to use.</param>
     /// <param name="expected">The first value to diff.</param>
     /// <param name="actual">The second value to dif.</param>
     /// <param name="writer">The writer to print to. If null, use standard output.</param>
@@ -36,7 +36,7 @@ type Extensions private () =
     static member Write(differ: IDiffer<'T>, expected: 'T, actual: 'T, [<Optional>] writer: TextWriter, [<Optional>] param: PrintParams) =
         Diffract.Write(expected, actual, writer, differ, param)
 
-    /// <summary>Get a diffing engine with support for specific types.</summary>
+    /// <summary>Get a differ with support for specific types.</summary>
     /// <param name="custom">A custom differ to handle specific types.</param>
     [<Extension>]
     static member GetDiffer<'T>(custom: ICustomDiffer) =
