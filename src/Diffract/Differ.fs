@@ -6,6 +6,7 @@ open System
 open System.Collections.Generic
 open TypeShape.Core
 open Diffract.ReadOnlyDictionaryShape
+open Diffract.DictionaryShape
 
 module Differ =
 
@@ -69,6 +70,7 @@ module Differ =
         | Shape.Uri -> simpleEquality<'T, Uri> cache
         | Shape.Tuple (:? ShapeTuple<'T> as t) -> addToCache (diffFields custom t.Elements Diff.Record) cache
         | Shape.ReadOnlyDictionary d -> addToCache (diffReadOnlyDict custom d) cache
+        | Shape.Dictionary d -> addToCache (diffDict custom d) cache
         | Shape.Enumerable e -> addToCache (diffEnumerable custom e) cache
         | Shape.FSharpRecord (:? ShapeFSharpRecord<'T> as r) -> addToCache (diffFields custom r.Fields Diff.Record) cache
         | Shape.FSharpUnion (:? ShapeFSharpUnion<'T> as u) ->
@@ -150,6 +152,34 @@ module Differ =
     and diffReadOnlyDict<'T> (custom: ICustomDiffer) (d: IShapeReadOnlyDictionary) (cache: Cache) : IDiffer<'T> =
         { new IReadOnlyDictionaryVisitor<IDiffer<'T>> with
             member _.Visit<'Dict, 'K, 'V when 'K : equality and 'Dict :> IReadOnlyDictionary<'K, 'V>>() =
+                let diffItem = diffWith<'V> custom cache
+                { new IDiffer<'Dict> with
+                    member _.Diff(d1, d2) =
+                        let seen = HashSet<'K>()
+                        let struct (keysInX1, common) =
+                            (struct ([], []), d1)
+                            ||> Seq.fold (fun (struct (keysInX1, common) as state) (KeyValue (k, v1)) ->
+                                seen.Add(k) |> ignore
+                                match d2.TryGetValue(k) with
+                                | true, v2 ->
+                                    match diffItem.Diff(v1, v2) with
+                                    | Some d -> struct (keysInX1, { Name = string k; Diff = d } :: common)
+                                    | None -> state
+                                | false, _ -> struct (string k :: keysInX1, common))
+                        let keysInX2 =
+                            d2
+                            |> Seq.choose (fun (KeyValue (k, _)) ->
+                                if seen.Contains(k) then None else Some (string k))
+                            |> List.ofSeq
+                        match keysInX1, keysInX2, common with
+                        | [], [], [] -> None
+                        | _ -> Some (Diff.Dictionary (keysInX1, keysInX2, common)) }
+                |> unbox<IDiffer<'T>> }
+        |> d.Accept
+
+    and diffDict<'T> (custom: ICustomDiffer) (d: IShapeDictionary) (cache: Cache) : IDiffer<'T> =
+        { new IDictionaryVisitor<IDiffer<'T>> with
+            member _.Visit<'Dict, 'K, 'V when 'K : equality and 'Dict :> IDictionary<'K, 'V>>() =
                 let diffItem = diffWith<'V> custom cache
                 { new IDiffer<'Dict> with
                     member _.Diff(d1, d2) =
