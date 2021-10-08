@@ -13,7 +13,8 @@ module Differ =
     type private Cache = Dictionary<Type, IDifferFactory>
     type private CachedDiffer<'T> = Cache -> IDiffer<'T>
 
-    let private addToCache (differ: CachedDiffer<'T>) : CachedDiffer<'T> =
+    /// Add to the cache a differ for a type that may be recursive (ie have nested fields of its own type).
+    let private addRecursiveToCache (differ: CachedDiffer<'T>) : CachedDiffer<'T> =
         let ty = typeof<'T>
         fun cache ->
             match cache.TryGetValue(ty) with
@@ -27,17 +28,33 @@ module Differ =
                 let differ = differ cache
                 r := differ
                 differ
-            | true, differ ->
-                differ.GetDiffer<'T>()
+            | true, differFactory ->
+                differFactory.GetDiffer<'T>()
 
-    let private wrap<'Outer, 'Inner> (f: 'Inner -> 'Inner -> Diff option) =
-        addToCache (fun _cache -> unbox<IDiffer<'Outer>> { new IDiffer<'Inner> with member _.Diff(x, y) = f x y })
+    /// Add to the cache a differ for a type that cannot be recursive (ie doesn't have fields of arbitrary types).
+    let private addNonRecursiveToCache (differ: IDiffer<'T>) : CachedDiffer<'T> =
+        fun cache ->
+            let ty = typeof<'T>
+            match cache.TryGetValue(ty) with
+            | true, differFactory ->
+                differFactory.GetDiffer<'T>()
+            | false, _ ->
+                cache.Add(typeof<'T>, { new IDifferFactory with member _.GetDiffer<'U>() = unbox<IDiffer<'U>> differ })
+                differ
 
+    /// Wrap a simple diffing function as a cached differ.
+    let private wrap<'Outer, 'Inner> (f: 'Inner -> 'Inner -> Diff option) : CachedDiffer<'Outer> =
+        { new IDiffer<'Inner> with member _.Diff(x1, x2) = f x1 x2 }
+        |> unbox<IDiffer<'Outer>>
+        |> addNonRecursiveToCache
+
+    /// Create a cached differ for a simple type with equality.
     let inline private simpleEquality<'Outer, ^Inner when ^Inner : equality> : CachedDiffer<'Outer> =
         wrap< ^Outer, ^Inner> (fun x1 x2 -> if x1 = x2 then None else Some (Diff.Value (x1, x2)))
 
     let inline private failwith (msg: string) = raise (DifferConstructionFailedException(msg))
 
+    /// Create a differ for an arbitrary type.
     let rec diffWith<'T> (custom: ICustomDiffer) (cache: Cache) : IDiffer<'T> =
         let getCached = { new IDifferFactory with
             member _.GetDiffer<'U>() =
@@ -68,11 +85,11 @@ module Differ =
         | Shape.TimeSpan -> simpleEquality<'T, TimeSpan> cache
         | Shape.BigInt -> simpleEquality<'T, bigint> cache
         | Shape.Uri -> simpleEquality<'T, Uri> cache
-        | Shape.Tuple (:? ShapeTuple<'T> as t) -> addToCache (diffFields custom t.Elements Diff.Record) cache
-        | Shape.ReadOnlyDictionary d -> addToCache (diffReadOnlyDict custom d) cache
-        | Shape.Dictionary d -> addToCache (diffDict custom d) cache
-        | Shape.Enumerable e -> addToCache (diffEnumerable custom e) cache
-        | Shape.FSharpRecord (:? ShapeFSharpRecord<'T> as r) -> addToCache (diffFields custom r.Fields Diff.Record) cache
+        | Shape.Tuple (:? ShapeTuple<'T> as t) -> addRecursiveToCache (diffFields custom t.Elements Diff.Record) cache
+        | Shape.ReadOnlyDictionary d -> addRecursiveToCache (diffReadOnlyDict custom d) cache
+        | Shape.Dictionary d -> addRecursiveToCache (diffDict custom d) cache
+        | Shape.Enumerable e -> addRecursiveToCache (diffEnumerable custom e) cache
+        | Shape.FSharpRecord (:? ShapeFSharpRecord<'T> as r) -> addRecursiveToCache (diffFields custom r.Fields Diff.Record) cache
         | Shape.FSharpUnion (:? ShapeFSharpUnion<'T> as u) ->
             let tagNames = u.UnionCases |> Array.map (fun c -> c.CaseInfo.Name)
             let tagDiffs = u.UnionCases |> Array.map (fun c ->
@@ -86,16 +103,18 @@ module Differ =
                     Some (Diff.UnionCase (tagNames.[t1], tagNames.[t2])))
                 cache
         | Shape.Enum e ->
-            { new IEnumVisitor<IDiffer<'T>> with
-                member _.Visit<'Enum, 'Underlying when 'Enum : enum<'Underlying> and 'Enum : struct and 'Enum :> ValueType and 'Enum : (new : unit -> 'Enum)>() =
-                    wrap<'T, 'Enum> (fun x1 x2 ->
-                        // Can't do better without 'Enum : equality? :(
-                        if (x1 :> obj).Equals(x2) then None else Some (Diff.Value (x1, x2)))
-                        cache }
-            |> e.Accept
+            let differ =
+                { new IEnumVisitor<IDiffer<'T>> with
+                    member _.Visit<'Enum, 'Underlying when 'Enum : enum<'Underlying> and 'Enum : struct and 'Enum :> ValueType and 'Enum : (new : unit -> 'Enum)>() =
+                        wrap<'T, 'Enum> (fun x1 x2 ->
+                            // Can't do better without 'Enum : equality? :(
+                            if (x1 :> obj).Equals(x2) then None else Some (Diff.Value (x1, x2)))
+                            cache }
+                |> e.Accept
+            addNonRecursiveToCache differ cache
         | Shape.Poco (:? ShapePoco<'T> as p) ->
             let members = p.Properties |> Array.filter (fun p -> p.IsPublic)
-            addToCache (diffReadOnlyFields<'T> custom members Diff.Record) cache
+            addRecursiveToCache (diffReadOnlyFields<'T> custom members Diff.Record) cache
         | Shape.Equality e ->
             { new IEqualityVisitor<IDiffer<'T>> with
                 member _.Visit<'Actual when 'Actual : equality>() =
@@ -105,6 +124,7 @@ module Differ =
             |> e.Accept
         | _ -> failwith $"Don't know how to diff values of type {typeof<'T>.AssemblyQualifiedName}"
 
+    /// Create a differ for a type composed of a number of read-only fields.
     and diffReadOnlyFields<'T> (custom: ICustomDiffer) (members: IShapeReadOnlyMember<'T>[]) (wrapFieldDiffs: IReadOnlyList<FieldDiff> -> Diff) (cache: Cache) : IDiffer<'T> =
         let fields =
             members
@@ -123,9 +143,11 @@ module Differ =
                 | [] -> None
                 | diffs -> Some (wrapFieldDiffs diffs) }
 
+    /// Create a differ for a type composed of a number of read-only or mutable fields.
     and diffFields<'T> (custom: ICustomDiffer) (members: IShapeMember<'T>[]) (wrapFieldDiffs: IReadOnlyList<FieldDiff> -> Diff) (cache: Cache) : IDiffer<'T> =
         diffReadOnlyFields custom (unbox<IShapeReadOnlyMember<'T>[]> members) wrapFieldDiffs cache
 
+    /// Create a differ for a type that implements IEnumerable<T>.
     and diffEnumerable<'T> (custom: ICustomDiffer) (e: IShapeEnumerable) (cache: Cache) : IDiffer<'T> =
         { new IEnumerableVisitor<IDiffer<'T>> with
             member _.Visit<'Enum, 'Elt when 'Enum :> seq<'Elt>>() =
@@ -149,6 +171,7 @@ module Differ =
                 |> unbox<IDiffer<'T>> }
         |> e.Accept
 
+    /// Create a differ for a type that implements IReadOnlyDictionary<K, V>.
     and diffReadOnlyDict<'T> (custom: ICustomDiffer) (d: IShapeReadOnlyDictionary) (cache: Cache) : IDiffer<'T> =
         { new IReadOnlyDictionaryVisitor<IDiffer<'T>> with
             member _.Visit<'Dict, 'K, 'V when 'K : equality and 'Dict :> IReadOnlyDictionary<'K, 'V>>() =
@@ -177,6 +200,7 @@ module Differ =
                 |> unbox<IDiffer<'T>> }
         |> d.Accept
 
+    /// Create a differ for a type that implements IDictionary<K, V>.
     and diffDict<'T> (custom: ICustomDiffer) (d: IShapeDictionary) (cache: Cache) : IDiffer<'T> =
         { new IDictionaryVisitor<IDiffer<'T>> with
             member _.Visit<'Dict, 'K, 'V when 'K : equality and 'Dict :> IDictionary<'K, 'V>>() =
@@ -205,4 +229,5 @@ module Differ =
                 |> unbox<IDiffer<'T>> }
         |> d.Accept
 
-    let rec simple<'T> = diffWith<'T> (NoCustomDiffer()) (Dictionary())
+    /// Get a differ for an arbitrary type, without any custom differs.
+    let simple<'T> = diffWith<'T> (NoCustomDiffer()) (Dictionary())
