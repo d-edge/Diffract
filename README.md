@@ -32,7 +32,7 @@ Diffract can drill down many composite types:
 * F# records and anonymous records;
 * F# unions;
 * enumerables (`IEnumerable<T>`);
-* dictionaries (`IReadOnlyDictionary<T>`);
+* dictionaries (`IDictionary<K, V>`, `IReadOnlyDictionary<K, V>`);
 * value and reference tuples.
 
 Values of any other equatable type (like `string` and `int` in the above example) are treated as leaves that can be tested for equality.
