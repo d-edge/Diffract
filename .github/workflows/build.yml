@@ -35,7 +35,7 @@ jobs:
       - name: Paket restore
         run: |
           dotnet tool restore
-          dotnet paket restore
+          dotnet paket install
       - name: Restore
         run: dotnet restore
       - name: Build
@@ -44,13 +44,13 @@ jobs:
         run: dotnet test -c Release
       - name: Pack
         if: matrix.os == 'ubuntu-latest'
-        run: dotnet pack -v normal -c Release --no-restore --include-symbols --include-source -p:PackageVersion=$GITHUB_RUN_ID src/$PROJECT_NAME/$PROJECT_NAME.*proj
+        run: dotnet paket pack --symbols --version $GITHUB_RUN_ID nupkg
       - name: Upload Artifact
         if: matrix.os == 'ubuntu-latest'
         uses: actions/upload-artifact@v2
         with:
           name: nupkg
-          path: ./src/${{ env.PROJECT_NAME }}/bin/Release/*.nupkg
+          path: nupkg
   prerelease:
     needs: build
     if: github.ref == 'refs/heads/main'
@@ -83,7 +83,7 @@ jobs:
           echo Version: $VERSION
           VERSION="${VERSION//v}"
           echo Clean Version: $VERSION
-          dotnet pack -v normal -c Release --include-symbols --include-source -p:PackageVersion=$VERSION -o nupkg src/$PROJECT_NAME/$PROJECT_NAME.*proj
+          dotnet paket pack --symbols --version $VERSION nupkg
       - name: Push to GitHub Feed
         run: |
           for f in ./nupkg/*.nupkg
