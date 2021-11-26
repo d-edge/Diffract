@@ -6,5 +6,6 @@ description
     Display a readable diff between two objects
 projectUrl https://github.com/d-edge/Diffract
 repositoryUrl https://github.com/d-edge/Diffract
+repositoryType git
 requireLicenseAcceptance true
 tags Dedge;Diffract;Diff;Equals;Test;Comparison
