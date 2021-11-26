@@ -1,5 +1,10 @@
 ﻿type project
 licenseExpression MIT
 authors Loïc Denuzière
+copyright Copyright 2021 D-EDGE
 description
     Display a readable diff between two objects
+projectUrl https://github.com/d-edge/Diffract
+repositoryUrl https://github.com/d-edge/Diffract
+requireLicenseAcceptance true
+tags Dedge;Diffract;Diff;Equals;Test;Comparison
