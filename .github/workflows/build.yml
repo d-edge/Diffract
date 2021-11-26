@@ -44,7 +44,18 @@ jobs:
         run: dotnet test -c Release
       - name: Pack
         if: matrix.os == 'ubuntu-latest'
-        run: dotnet paket pack --symbols --version $GITHUB_RUN_ID nupkg
+        run: |
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            arrTag=(${GITHUB_REF//\// })
+            VERSION="${arrTag[2]}"
+            echo Version: $VERSION
+            VERSION="${VERSION//v}"
+            echo Clean Version: $VERSION
+          else
+            VERSION=$GITHUB_RUN_ID
+            echo Non-release version: $VERSION
+          fi
+          dotnet paket pack --symbols --version $VERSION nupkg
       - name: Upload Artifact
         if: matrix.os == 'ubuntu-latest'
         uses: actions/upload-artifact@v2
@@ -76,14 +87,10 @@ jobs:
         uses: actions/setup-dotnet@v1
         with:
           dotnet-version: 6.0.100
-      - name: Create Release NuGet package
-        run: |
-          arrTag=(${GITHUB_REF//\// })
-          VERSION="${arrTag[2]}"
-          echo Version: $VERSION
-          VERSION="${VERSION//v}"
-          echo Clean Version: $VERSION
-          dotnet paket pack --symbols --version $VERSION nupkg
+      - name: Download Artifact
+        uses: actions/download-artifact@v1
+        with:
+          name: nupkg
       - name: Push to GitHub Feed
         run: |
           for f in ./nupkg/*.nupkg
