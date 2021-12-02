@@ -10,3 +10,4 @@ repositoryUrl https://github.com/d-edge/Diffract
 repositoryType git
 requireLicenseAcceptance true
 tags Dedge;Diffract;Diff;Equals;Test;Comparison
+iconUrl https://raw.githubusercontent.com/d-edge/Diffract/main/diffract-64x64.png
