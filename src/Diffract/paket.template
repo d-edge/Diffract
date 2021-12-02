@@ -1,4 +1,4 @@
-﻿type project
+type project
 licenseExpression MIT
 licenseUrl https://licenses.nuget.org/MIT
 authors Loïc Denuzière
@@ -11,3 +11,6 @@ repositoryType git
 requireLicenseAcceptance true
 tags Dedge;Diffract;Diff;Equals;Test;Comparison
 iconUrl https://raw.githubusercontent.com/d-edge/Diffract/main/diffract-64x64.png
+readme README.md
+files
+    ../../README.md ==> .
