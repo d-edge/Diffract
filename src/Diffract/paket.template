@@ -13,4 +13,4 @@ tags Dedge;Diffract;Diff;Equals;Test;Comparison
 iconUrl https://raw.githubusercontent.com/d-edge/Diffract/main/diffract-64x64.png
 readme README.md
 files
-    ../../README.md ==> .
+    README.md ==> .

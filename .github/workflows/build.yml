@@ -42,6 +42,11 @@ jobs:
         run: dotnet build -c Release --no-restore
       - name: Test
         run: dotnet test -c Release
+      - name: Strip HTML from README
+        uses: Tarmil/strip-markdown-html@v0.1
+        with:
+          input-path: README.md
+          output-path: src/Diffract/README.md
       - name: Pack
         if: matrix.os == 'ubuntu-latest'
         run: |

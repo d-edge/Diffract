@@ -10,3 +10,4 @@ packages/
 build/
 TestResults/
 .paket/
+src/Diffract/README.md
