@@ -2,18 +2,24 @@
 
 open System.IO
 
-let toStreamImpl param (w: TextWriter) (d: Diff) =
+let toStreamImpl (w: TextWriter) param (d: Diff) =
+    let originalParam = param
+    let param = if originalParam.ensureAligned then { originalParam with ensureAligned = false } else originalParam
+
     let addPathField path field = if path = "" then field else (path + "." + field)
     let addPathIndex path index = path + "[" + index + "]"
     let indentLike str = String.replicate (String.length str) " "
     let displayPath path = if path = "" then param.neutralName else path
 
+    let printValue indent path x1 x2 =
+        let dpath = if path = "" then "" else path + " "
+        w.WriteLine($"%s{indent}%s{dpath}%s{param.x1Name} = %A{x1}")
+        w.WriteLine($"%s{indent}%s{indentLike dpath}%s{param.x2Name} = %A{x2}")
+        
     let rec loop (indent: string) (path: string) (d: Diff) =
         match d with
         | Diff.Value (x1, x2) ->
-            let dpath = if path = "" then "" else path + " "
-            w.WriteLine($"%s{indent}%s{dpath}%s{param.x1Name} = %A{x1}")
-            w.WriteLine($"%s{indent}%s{indentLike dpath}%s{param.x2Name} = %A{x2}")
+            printValue indent path x1 x2
         | Diff.Record fields when fields.Count = 1 ->
             loop indent (addPathField path fields.[0].Name) fields.[0].Diff
         | Diff.Record fields ->
@@ -53,12 +59,19 @@ let toStreamImpl param (w: TextWriter) (d: Diff) =
                 w.WriteLine($"%s{indent}%s{param.x1Name}[%s{k}] is missing")
             for item in common do
                 loop indent (addPathIndex path item.Name) item.Diff
-    loop "" "" d
+
+    match originalParam.ensureAligned, d with
+    | true, Diff.Value (x1, x2) ->
+        w.WriteLine()
+        printValue "" "" x1 x2
+    | true, Diff.Custom cd ->
+        cd.WriteTo(w, originalParam, "", "", loop)
+    | _ -> loop "" "" d
 
 let write (param: PrintParams) (w: TextWriter) (d: Diff option) =
     match d with
     | None -> w.WriteLine($"No differences between {param.x1Name} and {param.x2Name}.")
-    | Some d -> toStreamImpl param w d
+    | Some d -> toStreamImpl w param d
 
 let toString param d =
     use w = new StringWriter(NewLine = "\n")
