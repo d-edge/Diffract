@@ -58,6 +58,12 @@ let ``Example error message`` () =
         ex.Message)
 
 [<Fact>]
+let ``Ensure aligned`` () =
+    let ex = Assert.Throws<AssertionFailedException>(fun () -> Diffract.Assert(12, 13))
+    Assert.Equal("\nExpect = 12\nActual = 13\n", ex.Message)
+    Assert.Equal("Expect = 12\nActual = 13\n", Diffract.ToString(12, 13))
+
+[<Fact>]
 let ``Example collection`` () =
     Assert.Equal("x collection differs:\n  x.Count Expect = 2\n          Actual = 3\n  x[1] Expect = 3\n       Actual = 2\n",
         Diffract.ToString(

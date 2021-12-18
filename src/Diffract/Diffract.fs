@@ -8,19 +8,26 @@ open System.Runtime.InteropServices
 [<AbstractClass; Sealed>]
 type Diffract private () =
 
-    static let assertPrintParams : PrintParams =
+    static let simplePrintParams : PrintParams =
         {
             indent = "  "
             x1Name = "Expect"
             x2Name = "Actual"
             neutralName = "Value"
+            ensureAligned = false
         }
 
-    static let defaultPrintParams p =
-        if obj.ReferenceEquals(p, null) then assertPrintParams else p
+    static let assertPrintParams : PrintParams =
+        { simplePrintParams with ensureAligned = true }
+
+    static let orIfNull (def: 'a) (value: 'a) : 'a when 'a : not struct =
+        if obj.ReferenceEquals(value, null) then def else value
 
     static let defaultDiffer d =
         if obj.ReferenceEquals(d, null) then Differ.simple else d
+
+    /// The default print parameters for simple printing.
+    static member SimplePrintParams = simplePrintParams
 
     /// The default print parameters for assertions.
     static member AssertPrintParams = assertPrintParams
@@ -46,7 +53,7 @@ type Diffract private () =
     /// <param name="diff">The diff to check.</param>
     /// <param name="param">The printing parameters used to generate the exception message.</param>
     static member Assert(diff: Diff option, [<Optional>] param: PrintParams) =
-        let param = defaultPrintParams param
+        let param = param |> orIfNull assertPrintParams
         if Option.isSome diff then
             DiffPrinter.toString param diff
             |> AssertionFailedException
@@ -65,7 +72,7 @@ type Diffract private () =
     /// <param name="diff">The diff to print.</param>
     /// <param name="param">The printing parameters.</param>
     static member ToString(diff: Diff option, [<Optional>] param: PrintParams) =
-        let param = defaultPrintParams param
+        let param = param |> orIfNull simplePrintParams
         DiffPrinter.toString param diff
 
     /// <summary>Print a diff to a string.</summary>
@@ -82,8 +89,8 @@ type Diffract private () =
     /// <param name="writer">The writer to print to. If null, use standard output.</param>
     /// <param name="param">The printing parameters.</param>
     static member Write(diff: Diff option, [<Optional>] writer: TextWriter, [<Optional>] param: PrintParams) =
-        let writer = if isNull writer then stdout else writer
-        let param = defaultPrintParams param
+        let writer = writer |> orIfNull stdout
+        let param = param |> orIfNull simplePrintParams
         DiffPrinter.write param writer diff
 
     /// <summary>Print a diff to a TextWriter.</summary>
