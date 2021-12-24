@@ -14,11 +14,11 @@ type Diffract private () =
             x1Name = "Expect"
             x2Name = "Actual"
             neutralName = "Value"
-            ensureAligned = false
+            ensureFirstLineIsAligned = false
         }
 
     static let assertPrintParams : PrintParams =
-        { simplePrintParams with ensureAligned = true }
+        { simplePrintParams with ensureFirstLineIsAligned = true }
 
     static let orIfNull (def: 'a) (value: 'a) : 'a when 'a : not struct =
         if obj.ReferenceEquals(value, null) then def else value

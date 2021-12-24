@@ -58,7 +58,7 @@ let ``Example error message`` () =
         ex.Message)
 
 [<Fact>]
-let ``Ensure aligned`` () =
+let ``Ensure first line is aligned`` () =
     let ex = Assert.Throws<AssertionFailedException>(fun () -> Diffract.Assert(12, 13))
     Assert.Equal("\nExpect = 12\nActual = 13\n", ex.Message)
     Assert.Equal("Expect = 12\nActual = 13\n", Diffract.ToString(12, 13))
@@ -126,7 +126,7 @@ module ``Custom differ with custom diff output`` =
                                 None
                             else
                                 Diff.MakeCustom(fun writer param indent path recur ->
-                                    if param.ensureAligned then writer.WriteLine()
+                                    if param.ensureFirstLineIsAligned then writer.WriteLine()
                                     let indentLike str = String.replicate (String.length str) " "
                                     let dpath = if path = "" then "" else path + " "
                                     writer.WriteLine($"{indent}{dpath}{param.x1Name} __is__ {x1.x}")

@@ -48,7 +48,7 @@ and PrintParams =
         /// Ensure that Expect and Actual remain aligned even if there is text before the first line
         /// by prepending a newline if the diff is a single Value.
         /// Default: true for Assert(), false for Write() and ToString().
-        ensureAligned: bool
+        ensureFirstLineIsAligned: bool
     }
 
 /// A custom computed diff that.

@@ -4,7 +4,7 @@ open System.IO
 
 let toStreamImpl (w: TextWriter) param (d: Diff) =
     let originalParam = param
-    let param = if originalParam.ensureAligned then { originalParam with ensureAligned = false } else originalParam
+    let param = if originalParam.ensureFirstLineIsAligned then { originalParam with ensureFirstLineIsAligned = false } else originalParam
 
     let addPathField path field = if path = "" then field else (path + "." + field)
     let addPathIndex path index = path + "[" + index + "]"
@@ -60,7 +60,7 @@ let toStreamImpl (w: TextWriter) param (d: Diff) =
             for item in common do
                 loop indent (addPathIndex path item.Name) item.Diff
 
-    match originalParam.ensureAligned, d with
+    match originalParam.ensureFirstLineIsAligned, d with
     | true, Diff.Value (x1, x2) ->
         w.WriteLine()
         printValue "" "" x1 x2
