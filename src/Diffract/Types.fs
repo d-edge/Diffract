@@ -22,6 +22,9 @@ type Diff =
     /// The objects are considered different by a custom differ.
     | Custom of ICustomDiff
 
+    static member MakeCustom(printer: System.Func<_, _, _, _, _, _>) =
+        Custom { new ICustomDiff with member _.WriteTo(w, p, i, pa, r) = printer.Invoke(w, p, i, pa, r) }
+
 /// A computed diff between two values of a field.
 and [<Struct>] FieldDiff =
     {
