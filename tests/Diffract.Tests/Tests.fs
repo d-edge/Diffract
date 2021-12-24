@@ -114,6 +114,54 @@ let ``Custom differ`` () =
     Assert.Equal("Expect = \"a\"\nActual = \"b\"\n",
         Diffract.ToString({ x = "a" }, { x = "b" }, MyDiffType.Differ))
 
+module ``Custom differ with custom diff output`` =
+
+    type MyCustomDiffer() =
+        interface ICustomDiffer with
+            member this.GetCustomDiffer<'T>(_, shape) =
+                if shape.Type = typeof<CustomDiffable> then
+                    { new IDiffer<CustomDiffable> with
+                        member _.Diff(x1, x2) =
+                            if x1.x = x2.x then
+                                None
+                            else
+                                Diff.MakeCustom(fun writer param indent path recur ->
+                                    if param.ensureAligned then writer.WriteLine()
+                                    let indentLike str = String.replicate (String.length str) " "
+                                    let dpath = if path = "" then "" else path + " "
+                                    writer.WriteLine($"{indent}{dpath}{param.x1Name} __is__ {x1.x}")
+                                    writer.WriteLine($"{indent}{indentLike dpath}{param.x2Name} __is__ {x2.x}"))
+                                |> Some }
+                    |> unbox<IDiffer<'T>>
+                    |> Some
+                else
+                    None
+
+    type MyDiffType<'T>() =
+        static member val Differ = MyCustomDiffer().GetDiffer<'T>()
+
+    [<Fact>]
+    let ``Assert with immediate value adds newline`` () =
+        let ex = Assert.Throws<AssertionFailedException>(fun () ->
+            Diffract.Assert({ x = "a" }, { x = "b" }, MyDiffType.Differ))
+        Assert.Equal("\nExpect __is__ a\nActual __is__ b\n", ex.Message)
+
+    [<Fact>]
+    let ``Assert with nested value doesn't add newline`` () =
+        let ex = Assert.Throws<AssertionFailedException>(fun () ->
+            Diffract.Assert({| i = { x = "a" } |}, {| i = { x = "b" } |}, MyDiffType.Differ))
+        Assert.Equal("i Expect __is__ a\n  Actual __is__ b\n", ex.Message)
+
+    [<Fact>]
+    let ``ToString with immediate value doesn't add newline`` () =
+        let diff = Diffract.ToString({ x = "a" }, { x = "b" }, MyDiffType.Differ)
+        Assert.Equal("Expect __is__ a\nActual __is__ b\n", diff)
+
+    [<Fact>]
+    let ``ToString with nested value doesn't add newline`` () =
+        let diff = Diffract.ToString({| i = { x = "a" } |}, {| i = { x = "b" } |}, MyDiffType.Differ)
+        Assert.Equal("i Expect __is__ a\n  Actual __is__ b\n", diff)
+
 type Rec = { xRec: Rec option }
 
 [<Fact>]
