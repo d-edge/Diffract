@@ -6,8 +6,8 @@
 
 <p align="center">
         <a href="https://github.com/d-edge/diffract/actions" title="actions"><img src="https://github.com/d-edge/diffract/actions/workflows/build.yml/badge.svg?branch=main" alt="actions build" /></a>
-    <a href="https://www.nuget.org/packages/diffract/" title="nuget"><img src="https://img.shields.io/nuget/vpre/diffract" alt="version" /></a>
-    <a href="https://www.nuget.org/stats/packages/diffract?groupby=Version" title="stats"><img src="https://img.shields.io/nuget/dt/diffract" alt="download" /></a> 
+    <a href="https://www.nuget.org/packages/dedge.diffract/" title="nuget"><img src="https://img.shields.io/nuget/vpre/dedge.diffract" alt="version" /></a>
+    <a href="https://www.nuget.org/stats/packages/dedge.diffract?groupby=Version" title="stats"><img src="https://img.shields.io/nuget/dt/dedge.diffract" alt="download" /></a> 
     <a href="https://raw.githubusercontent.com/d-edge/diffract/main/LICENSE" title="license"><img src="https://img.shields.io/github/license/d-edge/diffract" alt="license" /></a>
 </p>
 
