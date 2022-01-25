@@ -1,4 +1,4 @@
-﻿namespace Diffract.DictionaryShape
+﻿namespace DEdge.Diffract.DictionaryShape
 
 open System
 open System.Collections.Generic

@@ -5,7 +5,7 @@ module Tests
 open Xunit
 open FsCheck
 open FsCheck.Xunit
-open Diffract
+open DEdge.Diffract
 
 type Foo = { x: int; y: bool }
 type U =
@@ -15,24 +15,24 @@ type Bar = { a: Foo; b: U }
 
 [<Property>]
 let ``No exception for equal values`` (x: Bar) =
-    Diffract.Assert(x, x)
+    Differ.Assert(x, x)
 
 [<Property>]
 let ``Exception for non-equal values`` (x: Bar) (y: Bar) =
     x <> y ==> lazy
         Assert.Throws<AssertionFailedException>(fun () ->
-            Diffract.Assert(x, y))
+            Differ.Assert(x, y))
         |> ignore
 
 [<Property>]
 let ``List diff`` (l1: int list) (l2: int list) =
-    let d = Diffract.Diff(l1, l2)
+    let d = Differ.Diff(l1, l2)
     if l1 = l2 then
         d = None
     else
         let expectedDiffs =
             (l1, l2)
-            ||> Seq.mapi2 (fun i x1 x2 -> Diffract.Diff(x1, x2) |> Option.map (fun d -> { Name = string i; Diff = d }))
+            ||> Seq.mapi2 (fun i x1 x2 -> Differ.Diff(x1, x2) |> Option.map (fun d -> { Name = string i; Diff = d }))
             |> Seq.choose id
             |> List.ofSeq
         d = Some (Diff.Collection (l1.Length, l2.Length, expectedDiffs))
@@ -40,7 +40,7 @@ let ``List diff`` (l1: int list) (l2: int list) =
 [<Fact>]
 let ``Example output`` () =
     Assert.Equal("Value differs by 2 fields:\n  a.y Expect = true\n      Actual = false\n  b differs by union case:\n    Expect is U1\n    Actual is U2\n",
-        Diffract.ToString(
+        Differ.ToString(
             { a = { x = 1; y = true }
               b = U1 1 },
             { a = { x = 1; y = false }
@@ -49,7 +49,7 @@ let ``Example output`` () =
 [<Fact>]
 let ``Example error message`` () =
     let ex = Assert.Throws<AssertionFailedException>(fun () ->
-        Diffract.Assert(
+        Differ.Assert(
             { a = { x = 1; y = true }
               b = U1 1 },
             { a = { x = 1; y = false }
@@ -59,14 +59,14 @@ let ``Example error message`` () =
 
 [<Fact>]
 let ``Ensure first line is aligned`` () =
-    let ex = Assert.Throws<AssertionFailedException>(fun () -> Diffract.Assert(12, 13))
+    let ex = Assert.Throws<AssertionFailedException>(fun () -> Differ.Assert(12, 13))
     Assert.Equal("\nExpect = 12\nActual = 13\n", ex.Message)
-    Assert.Equal("Expect = 12\nActual = 13\n", Diffract.ToString(12, 13))
+    Assert.Equal("Expect = 12\nActual = 13\n", Differ.ToString(12, 13))
 
 [<Fact>]
 let ``Example collection`` () =
     Assert.Equal("x collection differs:\n  x.Count Expect = 2\n          Actual = 3\n  x[1] Expect = 3\n       Actual = 2\n",
-        Diffract.ToString(
+        Differ.ToString(
             {| x = [1; 3] |},
             {| x = [1; 2; 3] |}))
 
@@ -108,11 +108,11 @@ type MyDiffType<'T>() =
 [<Fact>]
 let ``Custom differ`` () =
     Assert.Equal("x Expect = \"a\"\n  Actual = \"b\"\n",
-        Diffract.ToString({ x = "a" }, { x = "b" }))
+        Differ.ToString({ x = "a" }, { x = "b" }))
     Assert.Equal("Expect = \"a\"\nActual = \"b\"\n",
-        Diffract.ToString({ x = "a" }, { x = "b" }, MyDiffModule.differ))
+        Differ.ToString({ x = "a" }, { x = "b" }, MyDiffModule.differ))
     Assert.Equal("Expect = \"a\"\nActual = \"b\"\n",
-        Diffract.ToString({ x = "a" }, { x = "b" }, MyDiffType.Differ))
+        Differ.ToString({ x = "a" }, { x = "b" }, MyDiffType.Differ))
 
 module ``Custom differ with custom diff output`` =
 
@@ -143,23 +143,23 @@ module ``Custom differ with custom diff output`` =
     [<Fact>]
     let ``Assert with immediate value adds newline`` () =
         let ex = Assert.Throws<AssertionFailedException>(fun () ->
-            Diffract.Assert({ x = "a" }, { x = "b" }, MyDiffType.Differ))
+            Differ.Assert({ x = "a" }, { x = "b" }, MyDiffType.Differ))
         Assert.Equal("\nExpect __is__ a\nActual __is__ b\n", ex.Message)
 
     [<Fact>]
     let ``Assert with nested value doesn't add newline`` () =
         let ex = Assert.Throws<AssertionFailedException>(fun () ->
-            Diffract.Assert({| i = { x = "a" } |}, {| i = { x = "b" } |}, MyDiffType.Differ))
+            Differ.Assert({| i = { x = "a" } |}, {| i = { x = "b" } |}, MyDiffType.Differ))
         Assert.Equal("i Expect __is__ a\n  Actual __is__ b\n", ex.Message)
 
     [<Fact>]
     let ``ToString with immediate value doesn't add newline`` () =
-        let diff = Diffract.ToString({ x = "a" }, { x = "b" }, MyDiffType.Differ)
+        let diff = Differ.ToString({ x = "a" }, { x = "b" }, MyDiffType.Differ)
         Assert.Equal("Expect __is__ a\nActual __is__ b\n", diff)
 
     [<Fact>]
     let ``ToString with nested value doesn't add newline`` () =
-        let diff = Diffract.ToString({| i = { x = "a" } |}, {| i = { x = "b" } |}, MyDiffType.Differ)
+        let diff = Differ.ToString({| i = { x = "a" } |}, {| i = { x = "b" } |}, MyDiffType.Differ)
         Assert.Equal("i Expect __is__ a\n  Actual __is__ b\n", diff)
 
 type Rec = { xRec: Rec option }
@@ -169,10 +169,10 @@ let ``Recursive type`` () =
     let x1 = { xRec = Some { xRec = None } }
     let x2 = { xRec = Some { xRec = Some { xRec = None } } }
     Assert.Equal("xRec.Value.xRec differs by union case:\n  Expect is None\n  Actual is Some\n",
-        Diffract.ToString(x1, x2))
+        Differ.ToString(x1, x2))
 
 [<Fact>]
 let ``Anonymous record`` () =
-    Assert.Null(Diffract.Diff({| x = 1; y = "2" |}, {| x = 1; y = "2" |}))
+    Assert.Null(Differ.Diff({| x = 1; y = "2" |}, {| x = 1; y = "2" |}))
     Assert.Equal("x Expect = 1\n  Actual = 2\n",
-        Diffract.ToString({| x = 1; y = "2" |}, {| x = 2; y = "2" |}))
+        Differ.ToString({| x = 1; y = "2" |}, {| x = 2; y = "2" |}))

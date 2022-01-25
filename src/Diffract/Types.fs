@@ -1,4 +1,4 @@
-﻿namespace Diffract
+﻿namespace DEdge.Diffract
 
 open System.Collections.Generic
 open System.IO

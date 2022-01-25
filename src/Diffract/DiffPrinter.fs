@@ -1,4 +1,4 @@
-﻿module Diffract.DiffPrinter
+﻿module DEdge.Diffract.DiffPrinter
 
 open System.IO
 
