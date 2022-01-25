@@ -2,7 +2,7 @@
 using TypeShape.Core;
 using Xunit;
 
-namespace Diffract.CSharp.Tests
+namespace DEdge.Diffract.CSharp.Tests
 {
     public class CustomDiffers
     {
@@ -12,7 +12,7 @@ namespace Diffract.CSharp.Tests
             var expectedDiff = "D.X Expect = \"a\"\n    Actual = \"b\"\n";
             var expected = new Container(new CustomDiffable("a"));
             var actual = new Container(new CustomDiffable("b"));
-            var actualDiff = Diffract.ToString(expected, actual);
+            var actualDiff = Differ.ToString(expected, actual);
             Assert.Equal(expectedDiff, actualDiff);
         }
 

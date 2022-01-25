@@ -1,4 +1,4 @@
-﻿namespace Diffract
+﻿namespace DEdge.Diffract
 
 open System
 open System.Collections.Generic
@@ -6,7 +6,7 @@ open System.IO
 open System.Runtime.InteropServices
 
 [<AbstractClass; Sealed>]
-type Diffract private () =
+type Differ private () =
 
     static let simplePrintParams : PrintParams =
         {
@@ -24,7 +24,7 @@ type Diffract private () =
         if obj.ReferenceEquals(value, null) then def else value
 
     static let defaultDiffer d =
-        if obj.ReferenceEquals(d, null) then Differ.simple else d
+        if obj.ReferenceEquals(d, null) then DifferImpl.simple else d
 
     /// The default print parameters for simple printing.
     static member SimplePrintParams = simplePrintParams
@@ -36,9 +36,9 @@ type Diffract private () =
     /// <param name="customDiffers">Custom differs to handle specific types.</param>
     static member GetDiffer<'T>([<ParamArray>] customDiffers: ICustomDiffer[]) =
         match customDiffers with
-        | null | [||] -> Differ.simple<'T>
-        | [| customDiffer |] -> Differ.diffWith<'T> customDiffer (Dictionary())
-        | _ -> Differ.diffWith<'T> (CombinedCustomDiffer(customDiffers)) (Dictionary())
+        | null | [||] -> DifferImpl.simple<'T>
+        | [| customDiffer |] -> DifferImpl.diffWith<'T> customDiffer (Dictionary())
+        | _ -> DifferImpl.diffWith<'T> (CombinedCustomDiffer(customDiffers)) (Dictionary())
 
     /// <summary>Compute the diff between two values.</summary>
     /// <param name="expected">The first value to diff.</param>
@@ -65,8 +65,8 @@ type Diffract private () =
     /// <param name="differ">The differ to use. If null, use <see cref="GetDiffer">GetDiffer&lt;T&gt;()</see>.</param>
     /// <param name="param">The printing parameters used to generate the exception message.</param>
     static member Assert<'T>(expected: 'T, actual: 'T, [<Optional>] differ: IDiffer<'T>, [<Optional>] param: PrintParams) =
-        let diff = Diffract.Diff(expected, actual, differ)
-        Diffract.Assert(diff, param)
+        let diff = Differ.Diff(expected, actual, differ)
+        Differ.Assert(diff, param)
 
     /// <summary>Print a diff to a string.</summary>
     /// <param name="diff">The diff to print.</param>
@@ -81,8 +81,8 @@ type Diffract private () =
     /// <param name="differ">The differ to use. If null, use <see cref="GetDiffer">GetDiffer&lt;T&gt;()</see>.</param>
     /// <param name="param">The printing parameters.</param>
     static member ToString<'T>(expected: 'T, actual: 'T, [<Optional>] differ: IDiffer<'T>, [<Optional>] param: PrintParams) =
-        let diff = Diffract.Diff(expected, actual, differ)
-        Diffract.ToString(diff, param)
+        let diff = Differ.Diff(expected, actual, differ)
+        Differ.ToString(diff, param)
 
     /// <summary>Print a diff to a TextWriter.</summary>
     /// <param name="diff">The diff to print.</param>
@@ -100,5 +100,5 @@ type Diffract private () =
     /// <param name="writer">The writer to print to. If null, use standard output.</param>
     /// <param name="param">The printing parameters.</param>
     static member Write<'T>(expected: 'T, actual: 'T, [<Optional>] writer: TextWriter, [<Optional>] differ: IDiffer<'T>, [<Optional>] param: PrintParams) =
-        let diff = Diffract.Diff(expected, actual, differ)
-        Diffract.Write(diff, writer, param)
+        let diff = Differ.Diff(expected, actual, differ)
+        Differ.Write(diff, writer, param)

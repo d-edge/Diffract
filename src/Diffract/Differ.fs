@@ -1,14 +1,14 @@
-﻿namespace Diffract
+﻿namespace DEdge.Diffract
 
 #nowarn "40"
 
 open System
 open System.Collections.Generic
 open TypeShape.Core
-open Diffract.ReadOnlyDictionaryShape
-open Diffract.DictionaryShape
+open DEdge.Diffract.ReadOnlyDictionaryShape
+open DEdge.Diffract.DictionaryShape
 
-module Differ =
+module DifferImpl =
 
     type private Cache = Dictionary<Type, IDifferFactory>
     type private CachedDiffer<'T> = Cache -> IDiffer<'T>
