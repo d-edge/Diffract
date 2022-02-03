@@ -15,7 +15,6 @@
 
 Diffract is a .NET library that displays a readable diff between two objects. It is particularly useful for unit testing complex objects. Diffract is maintained by folks at [D-EDGE](https://www.d-edge.com/).
 
-
 Here is an example:
 
 ```csharp
