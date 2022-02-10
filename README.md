@@ -18,12 +18,14 @@ It is particularly useful for unit testing complex objects.
 Here is an example:
 
 ```csharp
+using DEdge.Diffract;
+
 record User(string Name, int Age, string[] Pets);
 
 var expected = new User("Emma", 42, new[] { "Oscar", "Fluffy", "Tibbles" });
 var actual = new User("Andy", 42, new[] { "Oscar", "Sparky" });
 
-Diffract.Assert(expected, actual);
+Differ.Assert(expected, actual);
 ```
 
 The above throws an `AssertionFailedException` with the following message:
@@ -145,28 +147,28 @@ Value dictionary differs:
 
 ## API
 
-Diffract provides the following methods:
+Diffract lives in the namespace `DEdge.Diffract`. Its main API is the class `Differ`, which provides the following methods:
 
 ```csharp
-void Diffract.Assert<T>(T expected, T actual, IDiffer<T> differ = null, PrintParams param = null)
+void Assert<T>(T expected, T actual, IDiffer<T> differ = null, PrintParams param = null)
 ```
 
 Computes the diff between two objects and, if it is not empty, throws an `AssertionFailedException` with the diff as message.
 
 ```csharp
-string Diffract.ToString<T>(T expected, T actual, IDiffer<T> differ = null, PrintParams param = null)
+string ToString<T>(T expected, T actual, IDiffer<T> differ = null, PrintParams param = null)
 ```
 
 Prints the diff between two objects to a string.
 
 ```csharp
-void Diffract.Write<T>(T expected, T actual, TextWriter writer = null, IDiffer<T> differ = null, PrintParams param = null)
+void Write<T>(T expected, T actual, TextWriter writer = null, IDiffer<T> differ = null, PrintParams param = null)
 ```
 
 Prints the diff between two objects to the given TextWriter (or to standard output if not provided).
 
 ```csharp
-FSharpOption<Diff> Diffract.Diff<T>(T expected, T actual, IDiffer<T> differ = null)
+FSharpOption<Diff> Diff<T>(T expected, T actual, IDiffer<T> differ = null)
 ```
 
 Computes the diff between two objects. Returns `None` if the objects are found to be equal.
