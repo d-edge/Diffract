@@ -154,20 +154,28 @@ module DifferImpl =
                 let diffItem = diffWith<'Elt> custom cache
                 { new IDiffer<'Enum> with
                     member _.Diff(s1, s2) =
-                        let s1 = Seq.cache s1
-                        let s2 = Seq.cache s2
-                        let l1 = Seq.length s1
-                        let l2 = Seq.length s2
-                        match
-                            (s1, s2)
-                            ||> Seq.mapi2 (fun i e1 e2 ->
-                                diffItem.Diff(e1, e2)
-                                |> Option.map (fun diff -> { Name = string i; Diff = diff }))
-                            |> Seq.choose id
-                            |> List.ofSeq
-                            with
-                        | [] when l1 = l2 -> None
-                        | diffs -> Some (Diff.Collection (l1, l2, diffs)) }
+                        let tryCache s =
+                            match box s with
+                            | null -> Error Seq.empty
+                            | _ -> Ok (Seq.cache s)
+                            
+                        match tryCache s1, tryCache s2 with
+                        | Ok s1, Ok s2 ->
+                            let l1 = Seq.length s1
+                            let l2 = Seq.length s2
+                            match
+                                (s1, s2)
+                                ||> Seq.mapi2 (fun i e1 e2 ->
+                                    diffItem.Diff(e1, e2)
+                                    |> Option.map (fun diff -> { Name = string i; Diff = diff }))
+                                |> Seq.choose id
+                                |> List.ofSeq
+                                with
+                            | [] when l1 = l2 -> None
+                            | diffs -> Some (Diff.Collection (l1, l2, diffs))
+                        | Error _, Error _ -> None
+                        | _ ->
+                            Some (Diff.Value (s1, s2))}
                 |> unbox<IDiffer<'T>> }
         |> e.Accept
 
@@ -178,25 +186,32 @@ module DifferImpl =
                 let diffItem = diffWith<'V> custom cache
                 { new IDiffer<'Dict> with
                     member _.Diff(d1, d2) =
-                        let seen = HashSet<'K>()
-                        let struct (keysInX1, common) =
-                            (struct ([], []), d1)
-                            ||> Seq.fold (fun (struct (keysInX1, common) as state) (KeyValue (k, v1)) ->
-                                seen.Add(k) |> ignore
-                                match d2.TryGetValue(k) with
-                                | true, v2 ->
-                                    match diffItem.Diff(v1, v2) with
-                                    | Some d -> struct (keysInX1, { Name = string k; Diff = d } :: common)
-                                    | None -> state
-                                | false, _ -> struct (string k :: keysInX1, common))
-                        let keysInX2 =
-                            d2
-                            |> Seq.choose (fun (KeyValue (k, _)) ->
-                                if seen.Contains(k) then None else Some (string k))
-                            |> List.ofSeq
-                        match keysInX1, keysInX2, common with
-                        | [], [], [] -> None
-                        | _ -> Some (Diff.Dictionary (keysInX1, keysInX2, common)) }
+                        match box d1, box d2 with
+                        | null, null ->
+                            None
+                        | null, _
+                        | _, null ->
+                            Some (Diff.Value (d1, d2))
+                        | _ ->
+                            let seen = HashSet<'K>()
+                            let struct (keysInX1, common) =
+                                (struct ([], []), d1)
+                                ||> Seq.fold (fun (struct (keysInX1, common) as state) (KeyValue (k, v1)) ->
+                                    seen.Add(k) |> ignore
+                                    match d2.TryGetValue(k) with
+                                    | true, v2 ->
+                                        match diffItem.Diff(v1, v2) with
+                                        | Some d -> struct (keysInX1, { Name = string k; Diff = d } :: common)
+                                        | None -> state
+                                    | false, _ -> struct (string k :: keysInX1, common))
+                            let keysInX2 =
+                                d2
+                                |> Seq.choose (fun (KeyValue (k, _)) ->
+                                    if seen.Contains(k) then None else Some (string k))
+                                |> List.ofSeq
+                            match keysInX1, keysInX2, common with
+                            | [], [], [] -> None
+                            | _ -> Some (Diff.Dictionary (keysInX1, keysInX2, common)) }
                 |> unbox<IDiffer<'T>> }
         |> d.Accept
 
@@ -207,25 +222,32 @@ module DifferImpl =
                 let diffItem = diffWith<'V> custom cache
                 { new IDiffer<'Dict> with
                     member _.Diff(d1, d2) =
-                        let seen = HashSet<'K>()
-                        let struct (keysInX1, common) =
-                            (struct ([], []), d1)
-                            ||> Seq.fold (fun (struct (keysInX1, common) as state) (KeyValue (k, v1)) ->
-                                seen.Add(k) |> ignore
-                                match d2.TryGetValue(k) with
-                                | true, v2 ->
-                                    match diffItem.Diff(v1, v2) with
-                                    | Some d -> struct (keysInX1, { Name = string k; Diff = d } :: common)
-                                    | None -> state
-                                | false, _ -> struct (string k :: keysInX1, common))
-                        let keysInX2 =
-                            d2
-                            |> Seq.choose (fun (KeyValue (k, _)) ->
-                                if seen.Contains(k) then None else Some (string k))
-                            |> List.ofSeq
-                        match keysInX1, keysInX2, common with
-                        | [], [], [] -> None
-                        | _ -> Some (Diff.Dictionary (keysInX1, keysInX2, common)) }
+                        match box d1, box d2 with
+                        | null, null ->
+                            None
+                        | null, _
+                        | _, null ->
+                            Some (Diff.Value (d1, d2))
+                        | _ ->
+                            let seen = HashSet<'K>()
+                            let struct (keysInX1, common) =
+                                (struct ([], []), d1)
+                                ||> Seq.fold (fun (struct (keysInX1, common) as state) (KeyValue (k, v1)) ->
+                                    seen.Add(k) |> ignore
+                                    match d2.TryGetValue(k) with
+                                    | true, v2 ->
+                                        match diffItem.Diff(v1, v2) with
+                                        | Some d -> struct (keysInX1, { Name = string k; Diff = d } :: common)
+                                        | None -> state
+                                    | false, _ -> struct (string k :: keysInX1, common))
+                            let keysInX2 =
+                                d2
+                                |> Seq.choose (fun (KeyValue (k, _)) ->
+                                    if seen.Contains(k) then None else Some (string k))
+                                |> List.ofSeq
+                            match keysInX1, keysInX2, common with
+                            | [], [], [] -> None
+                            | _ -> Some (Diff.Dictionary (keysInX1, keysInX2, common)) }
                 |> unbox<IDiffer<'T>> }
         |> d.Accept
 

@@ -2,6 +2,7 @@ module Tests
 
 #nowarn "40"
 
+open System.Collections.Generic
 open Xunit
 open FsCheck
 open FsCheck.Xunit
@@ -176,3 +177,31 @@ let ``Anonymous record`` () =
     Assert.Null(Differ.Diff({| x = 1; y = "2" |}, {| x = 1; y = "2" |}))
     Assert.Equal("x Expect = 1\n  Actual = 2\n",
         Differ.ToString({| x = 1; y = "2" |}, {| x = 2; y = "2" |}))
+
+[<Fact>]
+let ``Both IEnumerable are null`` () =
+    Differ.Assert({| x = Unchecked.defaultof<IEnumerable<int>> |}, {| x = Unchecked.defaultof<IEnumerable<int>> |})
+
+[<Fact>]
+let ``One IEnumerable is null but not the other`` () =
+    let diff =
+        Differ.ToString({| x = Unchecked.defaultof<IEnumerable<int>> |}, {| x = Seq.empty<int> |})
+
+    Assert.Equal("x Expect = <null>\n  Actual = seq []\n", diff)
+
+[<Fact>]
+let ``Both IDictionary are null`` () =
+    Differ.Assert(
+        {| x = Unchecked.defaultof<IDictionary<int, int>> |},
+        {| x = Unchecked.defaultof<IDictionary<int, int>> |}
+    )
+
+[<Fact>]
+let ``One IDictionary is null but not the other`` () =
+    let diff =
+        Differ.ToString(
+            {| x = Unchecked.defaultof<Dictionary<int, int>> |},
+            {| x = System.Collections.Generic.Dictionary(Map.empty) |}
+        )
+
+    Assert.Equal("x Expect = <null>\n  Actual = seq []\n", diff)
