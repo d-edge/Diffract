@@ -88,6 +88,14 @@ module MyDiffModule =
 
     let differ<'T> = CustomDiffer().GetDiffer<'T>()
 
+module MyDiffWithCombinators =
+
+    let customDiffer = CustomDiffer<CustomDiffable>.Build(fun factory ->
+        let stringDiffer = factory.GetDiffer<string>()
+        fun x1 x2 -> stringDiffer.Diff(x1.x, x2.x))
+
+    let differ<'T> = customDiffer.GetDiffer<'T>()
+
 type MyDiffer(differFactory: IDifferFactory) =
     let stringDiffer = differFactory.GetDiffer<string>()
 
@@ -105,6 +113,13 @@ type MyCustomDiffer() =
 type MyDiffType<'T>() =
     static member val Differ = MyCustomDiffer().GetDiffer<'T>()
 
+type MyDiffTypeWithCombinators<'T>() =
+    static let customDiffer = CustomDiffer<CustomDiffable>.Build(fun factory ->
+        let stringDiffer = factory.GetDiffer<string>()
+        fun x1 x2 -> stringDiffer.Diff(x1.x, x2.x))
+
+    static member val Differ = customDiffer.GetDiffer<'T>()
+
 [<Fact>]
 let ``Custom differ`` () =
     Assert.Equal("x Expect = \"a\"\n  Actual = \"b\"\n",
@@ -112,54 +127,48 @@ let ``Custom differ`` () =
     Assert.Equal("Expect = \"a\"\nActual = \"b\"\n",
         Differ.ToString({ x = "a" }, { x = "b" }, MyDiffModule.differ))
     Assert.Equal("Expect = \"a\"\nActual = \"b\"\n",
+        Differ.ToString({ x = "a" }, { x = "b" }, MyDiffWithCombinators.differ))
+    Assert.Equal("Expect = \"a\"\nActual = \"b\"\n",
         Differ.ToString({ x = "a" }, { x = "b" }, MyDiffType.Differ))
+    Assert.Equal("Expect = \"a\"\nActual = \"b\"\n",
+        Differ.ToString({ x = "a" }, { x = "b" }, MyDiffTypeWithCombinators.Differ))
 
 module ``Custom differ with custom diff output`` =
 
-    type MyCustomDiffer() =
-        interface ICustomDiffer with
-            member this.GetCustomDiffer<'T>(_, shape) =
-                if shape.Type = typeof<CustomDiffable> then
-                    { new IDiffer<CustomDiffable> with
-                        member _.Diff(x1, x2) =
-                            if x1.x = x2.x then
-                                None
-                            else
-                                Diff.MakeCustom(fun writer param indent path recur ->
-                                    if param.ensureFirstLineIsAligned then writer.WriteLine()
-                                    let indentLike str = String.replicate (String.length str) " "
-                                    let dpath = if path = "" then "" else path + " "
-                                    writer.WriteLine($"{indent}{dpath}{param.x1Name} __is__ {x1.x}")
-                                    writer.WriteLine($"{indent}{indentLike dpath}{param.x2Name} __is__ {x2.x}"))
-                                |> Some }
-                    |> unbox<IDiffer<'T>>
-                    |> Some
-                else
-                    None
+    let myCustomDiffer = CustomDiffer<CustomDiffable>.Build(fun x1 x2 ->
+        if x1.x = x2.x then
+            None
+        else
+            Diff.MakeCustom(fun writer param indent path recur ->
+                if param.ensureFirstLineIsAligned then writer.WriteLine()
+                let indentLike str = String.replicate (String.length str) " "
+                let dpath = if path = "" then "" else path + " "
+                writer.WriteLine($"{indent}{dpath}{param.x1Name} __is__ {x1.x}")
+                writer.WriteLine($"{indent}{indentLike dpath}{param.x2Name} __is__ {x2.x}"))
+            |> Some)
 
-    type MyDiffType<'T>() =
-        static member val Differ = MyCustomDiffer().GetDiffer<'T>()
+    let differ<'T> = myCustomDiffer.GetDiffer<'T>()
 
     [<Fact>]
     let ``Assert with immediate value adds newline`` () =
         let ex = Assert.Throws<AssertionFailedException>(fun () ->
-            Differ.Assert({ x = "a" }, { x = "b" }, MyDiffType.Differ))
+            Differ.Assert({ x = "a" }, { x = "b" }, differ))
         Assert.Equal("\nExpect __is__ a\nActual __is__ b\n", ex.Message)
 
     [<Fact>]
     let ``Assert with nested value doesn't add newline`` () =
         let ex = Assert.Throws<AssertionFailedException>(fun () ->
-            Differ.Assert({| i = { x = "a" } |}, {| i = { x = "b" } |}, MyDiffType.Differ))
+            Differ.Assert({| i = { x = "a" } |}, {| i = { x = "b" } |}, differ))
         Assert.Equal("i Expect __is__ a\n  Actual __is__ b\n", ex.Message)
 
     [<Fact>]
     let ``ToString with immediate value doesn't add newline`` () =
-        let diff = Differ.ToString({ x = "a" }, { x = "b" }, MyDiffType.Differ)
+        let diff = Differ.ToString({ x = "a" }, { x = "b" }, differ)
         Assert.Equal("Expect __is__ a\nActual __is__ b\n", diff)
 
     [<Fact>]
     let ``ToString with nested value doesn't add newline`` () =
-        let diff = Differ.ToString({| i = { x = "a" } |}, {| i = { x = "b" } |}, MyDiffType.Differ)
+        let diff = Differ.ToString({| i = { x = "a" } |}, {| i = { x = "b" } |}, differ)
         Assert.Equal("i Expect __is__ a\n  Actual __is__ b\n", diff)
 
 type Rec = { xRec: Rec option }
