@@ -57,7 +57,10 @@ jobs:
             VERSION="${VERSION//v}"
             echo Clean Version: $VERSION
           else
-            VERSION=$GITHUB_RUN_ID
+            git fetch --prune --unshallow --tags --quiet
+            latestTag=$(git describe --tags --abbrev=0 2>/dev/null || echo 0.0.1)
+            runId=$GITHUB_RUN_ID
+            VERSION="${latestTag//v}-build.${runId}"
             echo Non-release version: $VERSION
           fi
           dotnet paket pack --symbols --version $VERSION nupkg
