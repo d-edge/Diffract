@@ -43,7 +43,7 @@ jobs:
       - name: Test
         run: dotnet test -c Release
       - name: Strip HTML from README
-        uses: Tarmil/strip-markdown-html@v0.1
+        uses: Tarmil/strip-markdown-html@v0.3
         with:
           input-path: README.md
           output-path: src/Diffract/README.md
