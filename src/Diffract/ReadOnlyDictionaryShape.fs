@@ -5,14 +5,14 @@ open System.Collections.Generic
 open TypeShape.Core
 
 type IReadOnlyDictionaryVisitor<'R> =
-    abstract Visit<'Dict, 'K, 'V when 'K : equality and 'Dict :> IReadOnlyDictionary<'K, 'V>> : unit -> 'R
+    abstract Visit<'Dict, 'K, 'V when 'K: equality and 'Dict :> IReadOnlyDictionary<'K, 'V>> : unit -> 'R
 
 type IShapeReadOnlyDictionary =
-    abstract Key : TypeShape
-    abstract Value : TypeShape
-    abstract Accept : visitor: IReadOnlyDictionaryVisitor<'R> -> 'R
+    abstract Key: TypeShape
+    abstract Value: TypeShape
+    abstract Accept: visitor: IReadOnlyDictionaryVisitor<'R> -> 'R
 
-type private ShapeReadOnlyDictionary<'Dict, 'K, 'V when 'K : equality and 'Dict :> IReadOnlyDictionary<'K, 'V>>() =
+type private ShapeReadOnlyDictionary<'Dict, 'K, 'V when 'K: equality and 'Dict :> IReadOnlyDictionary<'K, 'V>>() =
     interface IShapeReadOnlyDictionary with
         member _.Key = shapeof<'K> :> _
         member _.Value = shapeof<'V> :> _
@@ -26,13 +26,12 @@ module Shape =
             match s.ShapeInfo with
             | Generic (td, ta) when td.FullName = fullName -> Some ta
             | _ -> None
-        | iface ->
-            Some (iface.GetGenericArguments())
+        | iface -> Some(iface.GetGenericArguments())
 
     let (|ReadOnlyDictionary|_|) (s: TypeShape) =
         match s with
         | GenericInterface "System.Collections.Generic.IReadOnlyDictionary`2" ta ->
-            Activator.CreateInstanceGeneric<ShapeReadOnlyDictionary<_, _, _>>(Array.append [|s.Type|] ta)
+            Activator.CreateInstanceGeneric<ShapeReadOnlyDictionary<_, _, _>>(Array.append [| s.Type |] ta)
             :?> IShapeReadOnlyDictionary
             |> Some
         | _ -> None

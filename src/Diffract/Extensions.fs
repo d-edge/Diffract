@@ -33,7 +33,14 @@ type Extensions private () =
     /// <param name="writer">The writer to print to. If null, use standard output.</param>
     /// <param name="param">The printing parameters.</param>
     [<Extension>]
-    static member Write(differ: IDiffer<'T>, expected: 'T, actual: 'T, [<Optional>] writer: TextWriter, [<Optional>] param: PrintParams) =
+    static member Write
+        (
+            differ: IDiffer<'T>,
+            expected: 'T,
+            actual: 'T,
+            [<Optional>] writer: TextWriter,
+            [<Optional>] param: PrintParams
+        ) =
         Differ.Write(expected, actual, writer, differ, param)
 
     /// <summary>Get a differ with support for specific types.</summary>
@@ -45,5 +52,4 @@ type Extensions private () =
     /// <summary>Use in a custom differ to cast a differ for one type into a differ for another type.</summary>
     /// <seealso href="https://github.com/eiriktsarpalis/TypeShape">TypeShape documentation</seealso>
     [<Extension>]
-    static member Unwrap<'T, 'U>(differ: IDiffer<'T>) =
-        tryUnbox<IDiffer<'U>> differ
+    static member Unwrap<'T, 'U>(differ: IDiffer<'T>) = tryUnbox<IDiffer<'U>> differ

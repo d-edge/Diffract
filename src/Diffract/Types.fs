@@ -23,7 +23,9 @@ type Diff =
     | Custom of ICustomDiff
 
     static member MakeCustom(printer: System.Func<_, _, _, _, _, _>) =
-        Custom { new ICustomDiff with member _.WriteTo(w, p, i, pa, r) = printer.Invoke(w, p, i, pa, r) }
+        Custom
+            { new ICustomDiff with
+                member _.WriteTo(w, p, i, pa, r) = printer.Invoke(w, p, i, pa, r) }
 
 /// A computed diff between two values of a field.
 and [<Struct>] FieldDiff =
@@ -60,12 +62,18 @@ and ICustomDiff =
     /// <param name="path">The drilled-down path to access the currently diffed values from the root objects.</param>
     /// <param name="recur">The function to call to recursively print an inner diff.
     ///     Takes indent, path and the inner diff to print as arguments.</param>
-    abstract WriteTo : writer: TextWriter * param: PrintParams * indent: string * path: string * recur: (string -> string -> Diff -> unit) -> unit
+    abstract WriteTo:
+        writer: TextWriter *
+        param: PrintParams *
+        indent: string *
+        path: string *
+        recur: (string -> string -> Diff -> unit) ->
+            unit
 
 /// A differ for a specific type.
 type IDiffer<'T> =
     /// Diff two values.
-    abstract Diff : x1: 'T * x2: 'T -> Diff option
+    abstract Diff: x1: 'T * x2: 'T -> Diff option
 
 /// Generates a differ for any given type.
 type IDifferFactory =
@@ -87,7 +95,8 @@ type NoCustomDiffer() =
 type CombinedCustomDiffer(customDiffers: seq<ICustomDiffer>) =
     interface ICustomDiffer with
         member _.GetCustomDiffer(differ, shape) =
-            customDiffers |> Seq.tryPick (fun customDiffer -> customDiffer.GetCustomDiffer(differ, shape))
+            customDiffers
+            |> Seq.tryPick (fun customDiffer -> customDiffer.GetCustomDiffer(differ, shape))
 
 /// Thrown when the differ found differences between two objects.
 type AssertionFailedException(diff: string) =

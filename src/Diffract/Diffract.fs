@@ -8,23 +8,24 @@ open System.Runtime.InteropServices
 [<AbstractClass; Sealed>]
 type Differ private () =
 
-    static let simplePrintParams : PrintParams =
-        {
-            indent = "  "
-            x1Name = "Expect"
-            x2Name = "Actual"
-            neutralName = "Value"
-            ensureFirstLineIsAligned = false
-        }
+    static let simplePrintParams: PrintParams =
+        { indent = "  "
+          x1Name = "Expect"
+          x2Name = "Actual"
+          neutralName = "Value"
+          ensureFirstLineIsAligned = false }
 
-    static let assertPrintParams : PrintParams =
+    static let assertPrintParams: PrintParams =
         { simplePrintParams with ensureFirstLineIsAligned = true }
 
-    static let orIfNull (def: 'a) (value: 'a) : 'a when 'a : not struct =
+    static let orIfNull (def: 'a) (value: 'a) : 'a when 'a: not struct =
         if obj.ReferenceEquals(value, null) then def else value
 
     static let defaultDiffer d =
-        if obj.ReferenceEquals(d, null) then DifferImpl.simple else d
+        if obj.ReferenceEquals(d, null) then
+            DifferImpl.simple
+        else
+            d
 
     /// The default print parameters for simple printing.
     static member SimplePrintParams = simplePrintParams
@@ -36,7 +37,8 @@ type Differ private () =
     /// <param name="customDiffers">Custom differs to handle specific types.</param>
     static member GetDiffer<'T>([<ParamArray>] customDiffers: ICustomDiffer[]) =
         match customDiffers with
-        | null | [||] -> DifferImpl.simple<'T>
+        | null
+        | [||] -> DifferImpl.simple<'T>
         | [| customDiffer |] -> DifferImpl.diffWith<'T> customDiffer (Dictionary())
         | _ -> DifferImpl.diffWith<'T> (CombinedCustomDiffer(customDiffers)) (Dictionary())
 
@@ -54,17 +56,22 @@ type Differ private () =
     /// <param name="param">The printing parameters used to generate the exception message.</param>
     static member Assert(diff: Diff option, [<Optional>] param: PrintParams) =
         let param = param |> orIfNull assertPrintParams
+
         if Option.isSome diff then
-            DiffPrinter.toString param diff
-            |> AssertionFailedException
-            |> raise
+            DiffPrinter.toString param diff |> AssertionFailedException |> raise
 
     /// <summary>Throw <see cref="AssertionFailedException"/> if a diff is non-empty.</summary>
     /// <param name="expected">The first value to diff.</param>
     /// <param name="actual">The second value to dif.</param>
     /// <param name="differ">The differ to use. If null, use <see cref="GetDiffer">GetDiffer&lt;T&gt;()</see>.</param>
     /// <param name="param">The printing parameters used to generate the exception message.</param>
-    static member Assert<'T>(expected: 'T, actual: 'T, [<Optional>] differ: IDiffer<'T>, [<Optional>] param: PrintParams) =
+    static member Assert<'T>
+        (
+            expected: 'T,
+            actual: 'T,
+            [<Optional>] differ: IDiffer<'T>,
+            [<Optional>] param: PrintParams
+        ) =
         let diff = Differ.Diff(expected, actual, differ)
         Differ.Assert(diff, param)
 
@@ -80,7 +87,13 @@ type Differ private () =
     /// <param name="actual">The second value to dif.</param>
     /// <param name="differ">The differ to use. If null, use <see cref="GetDiffer">GetDiffer&lt;T&gt;()</see>.</param>
     /// <param name="param">The printing parameters.</param>
-    static member ToString<'T>(expected: 'T, actual: 'T, [<Optional>] differ: IDiffer<'T>, [<Optional>] param: PrintParams) =
+    static member ToString<'T>
+        (
+            expected: 'T,
+            actual: 'T,
+            [<Optional>] differ: IDiffer<'T>,
+            [<Optional>] param: PrintParams
+        ) =
         let diff = Differ.Diff(expected, actual, differ)
         Differ.ToString(diff, param)
 
@@ -99,6 +112,13 @@ type Differ private () =
     /// <param name="differ">The differ to use. If null, use <see cref="GetDiffer">GetDiffer&lt;T&gt;()</see>.</param>
     /// <param name="writer">The writer to print to. If null, use standard output.</param>
     /// <param name="param">The printing parameters.</param>
-    static member Write<'T>(expected: 'T, actual: 'T, [<Optional>] writer: TextWriter, [<Optional>] differ: IDiffer<'T>, [<Optional>] param: PrintParams) =
+    static member Write<'T>
+        (
+            expected: 'T,
+            actual: 'T,
+            [<Optional>] writer: TextWriter,
+            [<Optional>] differ: IDiffer<'T>,
+            [<Optional>] param: PrintParams
+        ) =
         let diff = Differ.Diff(expected, actual, differ)
         Differ.Write(diff, writer, param)
