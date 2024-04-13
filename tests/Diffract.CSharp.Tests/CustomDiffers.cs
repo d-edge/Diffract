@@ -9,56 +9,66 @@ namespace DEdge.Diffract.CSharp.Tests
         [Fact]
         public void NoCustomDiffer()
         {
-            var expectedDiff = "D.X Expect = \"a\"\n    Actual = \"b\"\n";
+            var expectedDiff = @"DDDDD.XXX Expect = ""a""
+          Actual = ""b""
+";
             var expected = new Container(new CustomDiffable("a"));
             var actual = new Container(new CustomDiffable("b"));
             var actualDiff = Differ.ToString(expected, actual);
-            Assert.Equal(expectedDiff, actualDiff);
+            AssertStr(expectedDiff, actualDiff);
         }
 
         [Fact]
         public void CustomDiffer()
         {
-            var expectedDiff = "D Expect = \"a\"\n  Actual = \"b\"\n";
+            var expectedDiff = @"DDDDD Expect = ""a""
+      Actual = ""b""
+";
             var expected = new Container(new CustomDiffable("a"));
             var actual = new Container(new CustomDiffable("b"));
             var actualDiff = MyDiffer.Get<Container>().ToString(expected, actual);
-            Assert.Equal(expectedDiff, actualDiff);
+            AssertStr(expectedDiff, actualDiff);
         }
 
         [Fact]
         public void CustomDifferWithCombinators()
         {
-            var expectedDiff = "D Expect = \"a\"\n  Actual = \"b\"\n";
+            var expectedDiff = @"DDDDD Expect = ""a""
+      Actual = ""b""
+";
             var expected = new Container(new CustomDiffable("a"));
             var actual = new Container(new CustomDiffable("b"));
             var actualDiff = MyDifferWithCombinators.Get<Container>().ToString(expected, actual);
-            Assert.Equal(expectedDiff, actualDiff);
+            AssertStr(expectedDiff, actualDiff);
         }
 
         [Fact]
         public void CustomDifferWithMap()
         {
-            var expectedDiff = "D Expect = \"a\"\n  Actual = \"b\"\n";
+            var expectedDiff = @"DDDDD Expect = ""a""
+      Actual = ""b""
+";
             var expected = new Container(new CustomDiffable("a"));
             var actual = new Container(new CustomDiffable("b"));
             var actualDiff = MyDifferWithMap.Get<Container>().ToString(expected, actual);
-            Assert.Equal(expectedDiff, actualDiff);
+            AssertStr(expectedDiff, actualDiff);
         }
 
         [Fact]
         public void CustomDifferWithMapToAnonymousObject()
         {
-            var expectedDiff = "D.v Expect = \"a\"\n    Actual = \"b\"\n";
+            var expectedDiff = @"DDDDD.v Expect = ""a""
+        Actual = ""b""
+";
             var expected = new Container(new CustomDiffable("a"));
             var actual = new Container(new CustomDiffable("b"));
             var actualDiff = MyDifferWithMapToAnonymousObject.Get<Container>().ToString(expected, actual);
-            Assert.Equal(expectedDiff, actualDiff);
+            AssertStr(expectedDiff, actualDiff);
         }
 
-        public record CustomDiffable(string X);
+        public record CustomDiffable(string XXX);
 
-        public record Container(CustomDiffable D);
+        public record Container(CustomDiffable DDDDD);
 
         public class MyDiffer : IDiffer<CustomDiffable>
         {
@@ -70,7 +80,7 @@ namespace DEdge.Diffract.CSharp.Tests
             }
 
             public FSharpOption<Diff> Diff(CustomDiffable x1, CustomDiffable x2) =>
-                _stringDiffer.Diff(x1.X, x2.X);
+                _stringDiffer.Diff(x1.XXX, x2.XXX);
 
             public static IDiffer<T> Get<T>() => Singleton<T>.Instance;
 
@@ -101,7 +111,7 @@ namespace DEdge.Diffract.CSharp.Tests
                 CustomDiffer<CustomDiffable>.Build(factory =>
                 {
                     var stringDiffer = factory.GetDiffer<string>();
-                    return (x1, x2) => stringDiffer.Diff(x1.X, x2.X);
+                    return (x1, x2) => stringDiffer.Diff(x1.XXX, x2.XXX);
                 });
         }
 
@@ -115,7 +125,7 @@ namespace DEdge.Diffract.CSharp.Tests
             }
 
             private static readonly ICustomDiffer CustomDiffer =
-                CustomDiffer<CustomDiffable>.Map(x => x.X);
+                CustomDiffer<CustomDiffable>.Map(x => x.XXX);
         }
 
         public static class MyDifferWithMapToAnonymousObject
@@ -128,7 +138,12 @@ namespace DEdge.Diffract.CSharp.Tests
             }
 
             private static readonly ICustomDiffer CustomDiffer =
-                CustomDiffer<CustomDiffable>.Map(x => new { v = x.X });
+                CustomDiffer<CustomDiffable>.Map(x => new { v = x.XXX });
+        }
+
+        private void AssertStr(string expected, string actual)
+        {
+            Assert.Equal(expected.Replace("\r\n", "\n"), actual);
         }
     }
 }
