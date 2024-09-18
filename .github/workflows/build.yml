@@ -66,7 +66,7 @@ jobs:
           dotnet paket pack --symbols --version $VERSION nupkg
       - name: Upload Artifact
         if: matrix.os == 'ubuntu-latest'
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: nupkg
           path: nupkg
@@ -76,7 +76,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download Artifact
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v4
         with:
           name: nupkg
       - name: Push to GitHub Feed
@@ -96,7 +96,7 @@ jobs:
         with:
           dotnet-version: 6.0.100
       - name: Download Artifact
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v4
         with:
           name: nupkg
       - name: Push to GitHub Feed
