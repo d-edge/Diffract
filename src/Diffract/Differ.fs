@@ -13,6 +13,17 @@ module DifferImpl =
     type private Cache = Dictionary<Type, IDifferFactory>
     type private CachedDiffer<'T> = Cache -> IDiffer<'T>
 
+    let private checkNull<'T> (differ: IDiffer<'T>) =
+        if typeof<'T>.IsValueType then
+            differ
+        else
+            { new IDiffer<'T> with
+                member _.Diff(x1, x2) =
+                    match isNull (box x1), isNull (box x2) with
+                    | false, false -> differ.Diff(x1, x2)
+                    | true, true -> None
+                    | _ -> Some (Nullness(x1, x2)) }
+
     /// Add to the cache a differ for a type that may be recursive (ie have nested fields of its own type).
     let private addRecursiveToCache (differ: CachedDiffer<'T>) : CachedDiffer<'T> =
         let ty = typeof<'T>
@@ -25,7 +36,7 @@ module DifferImpl =
                         { new IDiffer<'U> with
                             member _.Diff(x1, x2) =
                                 (unbox<IDiffer<'U>> !r).Diff(x1, x2) } })
-                let differ = differ cache
+                let differ = differ cache |> checkNull
                 r := differ
                 differ
             | true, differFactory ->
