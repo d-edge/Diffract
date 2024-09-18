@@ -11,15 +11,27 @@ let toStreamImpl (w: TextWriter) param (d: Diff) =
     let indentLike str = String.replicate (String.length str) " "
     let displayPath path = if path = "" then param.neutralName else path
 
-    let printValue indent path x1 x2 =
+    let printValue indent path (x1: obj) (x2: obj) =
         let dpath = if path = "" then "" else path + " "
-        w.WriteLine($"%s{indent}%s{dpath}%s{param.x1Name} = %A{x1}")
-        w.WriteLine($"%s{indent}%s{indentLike dpath}%s{param.x2Name} = %A{x2}")
-        
+        if isNull x1 then
+            w.WriteLine($"%s{indent}%s{dpath}%s{param.x1Name} is null")
+            w.WriteLine($"%s{indent}%s{indentLike dpath}%s{param.x2Name} = %A{x2}")
+        elif isNull x2 then
+            w.WriteLine($"%s{indent}%s{dpath}%s{param.x1Name} = %A{x1}")
+            w.WriteLine($"%s{indent}%s{indentLike dpath}%s{param.x2Name} is null")
+        else
+            w.WriteLine($"%s{indent}%s{dpath}%s{param.x1Name} = %A{x1}")
+            w.WriteLine($"%s{indent}%s{indentLike dpath}%s{param.x2Name} = %A{x2}")
+
     let rec loop (indent: string) (path: string) (d: Diff) =
         match d with
         | Diff.Value (x1, x2) ->
             printValue indent path x1 x2
+        | Diff.Nullness (x1, x2) ->
+            let dpath = if path = "" then "" else path + " "
+            let dindent = indentLike dpath
+            w.WriteLine($"""%s{indent}%s{dpath}%s{param.x1Name} is%s{if isNull x1 then "" else " not"} null""")
+            w.WriteLine($"""%s{indent}%s{dindent}%s{param.x2Name} is%s{if isNull x2 then "" else " not"} null""")
         | Diff.Record fields when fields.Count = 1 ->
             loop indent (addPathField path fields.[0].Name) fields.[0].Diff
         | Diff.Record fields ->

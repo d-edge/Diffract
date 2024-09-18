@@ -9,6 +9,8 @@ open TypeShape.Core
 type Diff =
     /// The objects are leaf values and are different.
     | Value of x1: obj * x2: obj
+    /// One of the objects is null and the other isn't.
+    | Nullness of x1: obj * x2: obj
     /// The objects are records or plain objects and some of their fields differ.
     | Record of fields: IReadOnlyList<FieldDiff>
     /// The objects are F# unions with different cases.

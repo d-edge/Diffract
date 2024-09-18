@@ -13,6 +13,12 @@ type U =
     | U2 of x: int * y: int
 type Bar = { aaa: Foo; bbb: U }
 
+type Baz = { xx: int; yy: string }
+
+[<AllowNullLiteral>]
+type Class(x: int) =
+    member _.X = x
+
 let assertStr (expected: string, actual: string) =
     Assert.Equal(expected.Replace("\r\n", "\n"), actual)
 
@@ -26,6 +32,62 @@ let ``Exception for non-equal values`` (x: Bar) (y: Bar) =
         Assert.Throws<AssertionFailedException>(fun () ->
             Differ.Assert(x, y))
         |> ignore
+
+[<Fact>]
+let ``Both have null leaf`` () =
+    let actual = Differ.Diff({ xx = 1; yy = null }, { xx = 1; yy = null })
+    Assert.Equal(None, actual)
+
+[<Fact>]
+let ``Expected has null leaf`` () =
+    let actual = Differ.Diff({ xx = 1; yy = null }, { xx = 1; yy = "a" })
+    Assert.Equal(Some(Diff.Record [ { Name = "yy"; Diff = Diff.Value(null, "a") } ]), actual)
+
+    let actual = Differ.ToString({ xx = 1; yy = null }, { xx = 1; yy = "a" })
+    assertStr("\
+yy Expect is null
+   Actual = \"a\"
+", actual)
+
+[<Fact>]
+let ``Actual has null leaf`` () =
+    let actual = Differ.Diff({ xx = 1; yy = "a" }, { xx = 1; yy = null })
+    Assert.Equal(Some(Diff.Record [ { Name = "yy"; Diff = Diff.Value("a", null) } ]), actual)
+
+    let actual = Differ.ToString({ xx = 1; yy = "a" }, { xx = 1; yy = null })
+    assertStr("\
+yy Expect = \"a\"
+   Actual is null
+", actual)
+
+[<Fact>]
+let ``Both are null`` () =
+    let actual = Differ.Diff((null: Class), null)
+    Assert.Equal(None, actual)
+
+[<Fact>]
+let ``Expected is null`` () =
+    let actualValue = Class(3)
+    let actual = Differ.Diff(null, actualValue)
+    Assert.Equal(Some(Diff.Nullness(null, actualValue)), actual)
+
+    let actual = Differ.ToString(null, actualValue)
+    assertStr("\
+Expect is null
+Actual is not null
+", actual)
+
+[<Fact>]
+let ``Actual is null`` () =
+    let actualValue = Class(3)
+    let actual = Differ.Diff(actualValue, null)
+    Assert.Equal(Some(Diff.Nullness(actualValue, null)), actual)
+
+    let actual = Differ.ToString(actualValue, null)
+    assertStr("\
+Expect is not null
+Actual is null
+", actual)
 
 [<Property>]
 let ``List diff`` (l1: int list) (l2: int list) =
