@@ -124,7 +124,10 @@ module DifferImpl =
                 |> e.Accept
             addNonRecursiveToCache differ cache
         | Shape.Poco (:? ShapePoco<'T> as p) ->
-            let members = p.Properties |> Array.filter (fun p -> p.IsPublic)
+            let members = [|
+                for prop in p.Properties do if prop.IsPublic then prop
+                for field in p.Fields do if field.IsPublic then field
+            |]
             addRecursiveToCache (diffReadOnlyFields<'T> custom members Diff.Record) cache
         | Shape.Equality e ->
             { new IEqualityVisitor<IDiffer<'T>> with

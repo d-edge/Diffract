@@ -14,6 +14,15 @@ namespace DEdge.Diffract.CSharp.Tests
         }
 
         [Fact]
+        public void FieldPoco()
+        {
+            var expected = new MyFieldPoco(1, "a");
+            var actual = new MyFieldPoco(2, "a");
+            Assert.Equal("X Expect = 1\n  Actual = 2\n",
+                Differ.ToString(expected, actual));
+        }
+
+        [Fact]
         public void Record()
         {
             var expected = new MyRecord(1, "a");
@@ -39,6 +48,18 @@ namespace DEdge.Diffract.CSharp.Tests
         public class MyPoco
         {
             public MyInnerPoco Item { get; init; }
+        }
+
+        public class MyFieldPoco
+        {
+            public int X;
+            public string Y;
+
+            public MyFieldPoco(int x, string y)
+            {
+                X = x;
+                Y = y;
+            }
         }
 
         public record MyRecord(int X, string Y);
